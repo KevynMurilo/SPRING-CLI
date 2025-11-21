@@ -324,7 +324,7 @@ class ProjectGenerator:
             self._write_java_file(target_dir, f"Demo{suffix}", template, context)
 
     def _create_clean_structure(self, context: Dict[str, Any]):
-        folders = ['domain/entity', 'application/usecase', 'infrastructure/web', 'infrastructure/db', 'infrastructure/config']
+        folders = ['domain/entity', 'application/usecase', 'infrastructure/web', 'infrastructure/db']
         for folder in folders:
             (self.java_root / folder).mkdir(parents=True, exist_ok=True)
 
