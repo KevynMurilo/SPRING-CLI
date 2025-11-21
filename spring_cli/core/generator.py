@@ -377,6 +377,8 @@ class ProjectGenerator:
         if "web" in self.config['dependencies']:
             self._create_swagger_config(self.java_root / "infrastructure/config", context)
 
+        base_package = self._extract_package_name()
+
         if "data-jpa" in self.config['dependencies']:
             entity_context = {**context, "folder": "model"}
             self._write_java_file(self.java_root / "domain/model", "Demo", "Entity.java.jinja2", entity_context)
@@ -390,7 +392,9 @@ class ProjectGenerator:
 
         for folder, filename, template in artifacts:
             target_dir = self.java_root / folder
-            self._write_java_file(target_dir, filename, template, context)
+            pkg_name = self._get_package_for_path(target_dir)
+            ctx = {**context, "package_name": pkg_name, "base_package": base_package}
+            self._write_java_file(target_dir, filename, template, ctx)
 
     def _create_hexagonal_structure(self, context: Dict[str, Any]):
         folders = ['domain/model', 'application', 'ports/in', 'ports/out', 'adapters/in/web', 'adapters/out/persistence', 'infrastructure/config']
@@ -402,6 +406,8 @@ class ProjectGenerator:
 
         if "web" in self.config['dependencies']:
             self._create_swagger_config(self.java_root / "infrastructure/config", context)
+
+        base_package = self._extract_package_name()
 
         if "data-jpa" in self.config['dependencies']:
             entity_context = {**context, "folder": "model"}
@@ -417,7 +423,9 @@ class ProjectGenerator:
 
         for folder, filename, template in artifacts:
             target_dir = self.java_root / folder
-            self._write_java_file(target_dir, filename, template, context)
+            pkg_name = self._get_package_for_path(target_dir)
+            ctx = {**context, "package_name": pkg_name, "base_package": base_package}
+            self._write_java_file(target_dir, filename, template, ctx)
 
     def _write_java_file(
         self,

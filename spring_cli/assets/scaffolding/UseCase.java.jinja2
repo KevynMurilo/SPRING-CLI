@@ -1,11 +1,18 @@
-package {{ package_name }}.application.usecase;
+package {{ package_name }};
 
+import {{ base_package }}.domain.repository.{{ entity_name }}Repository;
 import org.springframework.stereotype.Component;
 
 @Component
 public class {{ entity_name }}UseCase {
 
+    private final {{ entity_name }}Repository repository;
+
+    public {{ entity_name }}UseCase({{ entity_name }}Repository repository) {
+        this.repository = repository;
+    }
+
     public String execute() {
-        return "Use case executed successfully!";
+        return repository.findData();
     }
 }

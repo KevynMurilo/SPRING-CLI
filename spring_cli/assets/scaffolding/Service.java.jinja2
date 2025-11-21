@@ -1,11 +1,18 @@
 package {{ package_name }}.service;
 
+import {{ package_name }}.repository.{{ entity_name }}Repository;
 import org.springframework.stereotype.Service;
 
 @Service
 public class {{ entity_name }}Service {
 
+    private final {{ entity_name }}Repository repository;
+
+    public {{ entity_name }}Service({{ entity_name }}Repository repository) {
+        this.repository = repository;
+    }
+
     public String processarDados() {
-        return "Lógica de negócio processada no Service!";
+        return repository.buscarDados();
     }
 }

@@ -1,7 +1,7 @@
-package {{ package_name }}.application;
+package {{ package_name }};
 
-import {{ package_name }}.ports.in.{{ entity_name }}UseCase;
-import {{ package_name }}.ports.out.{{ entity_name }}Repository;
+import {{ base_package }}.ports.in.{{ entity_name }}UseCase;
+import {{ base_package }}.ports.out.{{ entity_name }}Repository;
 import org.springframework.stereotype.Service;
 
 @Service
