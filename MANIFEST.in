@@ -1,9 +1,9 @@
 include README.md
 include LICENSE
 include requirements.txt
-recursive-include assets *.properties *.jinja2 *.example
-recursive-include config *.py
-recursive-include core *.py
-recursive-include ui *.py
+recursive-include spring_cli/assets *.properties *.jinja2 *.example
+recursive-include spring_cli/config *.py
+recursive-include spring_cli/core *.py
+recursive-include spring_cli/ui *.py
 global-exclude __pycache__
 global-exclude *.py[co]

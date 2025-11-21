@@ -10,16 +10,9 @@ setup(
     description="A powerful CLI tool to generate Spring Boot projects with custom scaffolding",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/spring-cli",
+    url="https://github.com/KevynMurilo/SPRING-CLI",
     packages=find_packages(),
     include_package_data=True,
-    package_data={
-        "": [
-            "assets/properties/*.properties",
-            "assets/scaffolding/*.jinja2",
-            "assets/ops/*.jinja2"
-        ]
-    },
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
@@ -42,8 +35,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "spring-cli=cli:main",
+            "spring-cli=spring_cli.cli:main",
         ],
     },
-    py_modules=["cli", "main"],
 )
