@@ -48,8 +48,10 @@ Spring CLI is an interactive, intelligent project generator that:
 
 Choose your architecture pattern and get a complete, working structure:
 
-- **MVC Pattern**: Traditional `controller/service/repository` layering.
+- **MVC Pattern**: Traditional `controller/service/repository/model` layering.
 - **Feature-Based**: Domain-driven with `features/{feature}/web|domain|data`.
+- **Clean Architecture**: Organized by `domain/application/infrastructure`.
+- **Hexagonal**: Ports & Adapters with `domain/application/ports/adapters`.
 - **Default**: Clean Spring Boot starter without scaffolding.
 
 ### 🔐 Production-Ready JWT Authentication
@@ -70,7 +72,15 @@ Every project includes:
 ### 📦 Smart Dependency Management
 
 - **Fuzzy Search**: Type to find any Spring Initializr dependency.
-- **Auto-Config**: Injection of properties for selected dependencies.
+- **Auto-Config**: Automatic injection of properties for selected dependencies including:
+  - **Databases**: PostgreSQL, MySQL, MongoDB, H2
+  - **Messaging**: Kafka, RabbitMQ
+  - **Caching**: Redis
+  - **Security**: Spring Security, OAuth2
+  - **Monitoring**: Actuator, Zipkin
+  - **Cloud**: Eureka, Config Server, Gateway, Feign, Resilience4j
+  - **DevOps**: DevTools, Flyway, Liquibase
+  - **Validation**: Bean Validation
 - **Swagger UI**: Automatically added and configured for web projects.
 
 ### 🛡️ Safety First
@@ -130,7 +140,7 @@ You'll be guided through the interactive wizard:
 2.  **Project Details**: Group ID, Artifact ID, Java version.
 3.  **Dependencies**: Fuzzy search (Type to filter, TAB to select).
 4.  **JWT Setup**: Optional security layer (prompts only if Security is selected).
-5.  **Architecture**: MVC or Feature-based.
+5.  **Architecture**: MVC, Feature-based, Clean Architecture, or Hexagonal.
 6.  **Review**: Confirm or edit details before generation.
 
 -----
@@ -215,6 +225,40 @@ src/main/java/{package}/
         ├── web/        # Controllers
         ├── domain/     # Services & Models
         └── data/       # Repositories
+```
+
+### Clean Architecture
+
+Separates business rules from infrastructure concerns. Best for enterprise applications requiring high testability and maintainability.
+
+```text
+src/main/java/{package}/
+├── domain/
+│   └── entity/         # Business entities
+├── application/
+│   └── usecase/        # Use cases (business logic)
+└── infrastructure/
+    ├── web/            # Controllers
+    ├── db/             # JPA implementations
+    └── config/         # Configurations
+```
+
+### Hexagonal (Ports & Adapters)
+
+Focuses on isolation of business logic from external concerns. Best for microservices and systems requiring multiple adapters.
+
+```text
+src/main/java/{package}/
+├── domain/             # Core business rules
+├── application/        # Application services
+├── ports/
+│   ├── in/            # Input ports (interfaces)
+│   └── out/           # Output ports (interfaces)
+└── adapters/
+    ├── in/
+    │   └── web/       # REST adapters
+    └── out/
+        └── db/        # Database adapters
 ```
 
 -----
