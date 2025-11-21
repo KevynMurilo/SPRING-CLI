@@ -1,0 +1,22 @@
+package {{ package_name }}.controller;
+
+import {{ package_name }}.service.{{ entity_name }}Service;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/{{ entity_name | lower }}")
+public class {{ entity_name }}Controller {
+
+    private final {{ entity_name }}Service service;
+
+    public {{ entity_name }}Controller({{ entity_name }}Service service) {
+        this.service = service;
+    }
+
+    @GetMapping
+    public String hello() {
+        return service.processarDados();
+    }
+}
