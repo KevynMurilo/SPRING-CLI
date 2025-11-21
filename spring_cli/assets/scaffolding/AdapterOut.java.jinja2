@@ -1,10 +1,10 @@
-package {{ package_name }}.adapters.out.db;
+package {{ package_name }}.adapters.out.persistence;
 
-import {{ package_name }}.ports.out.{{ entity_name }}OutputPort;
+import {{ package_name }}.ports.out.{{ entity_name }}Repository;
 import org.springframework.stereotype.Component;
 
 @Component
-public class {{ entity_name }}Adapter implements {{ entity_name }}OutputPort {
+public class {{ entity_name }}RepositoryAdapter implements {{ entity_name }}Repository {
 
     @Override
     public String findData() {

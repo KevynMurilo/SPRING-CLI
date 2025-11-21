@@ -1,10 +1,12 @@
-package {{ package_name }}.infrastructure.db;
+package {{ package_name }}.infrastructure.persistence;
 
+import {{ package_name }}.domain.repository.{{ entity_name }}Repository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class {{ entity_name }}RepositoryImpl {
+public class {{ entity_name }}RepositoryImpl implements {{ entity_name }}Repository {
 
+    @Override
     public String findData() {
         return "Data from database";
     }

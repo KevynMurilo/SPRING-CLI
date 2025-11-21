@@ -1,20 +1,20 @@
 package {{ package_name }}.application;
 
-import {{ package_name }}.ports.in.{{ entity_name }}InputPort;
-import {{ package_name }}.ports.out.{{ entity_name }}OutputPort;
+import {{ package_name }}.ports.in.{{ entity_name }}UseCase;
+import {{ package_name }}.ports.out.{{ entity_name }}Repository;
 import org.springframework.stereotype.Service;
 
 @Service
-public class {{ entity_name }}Service implements {{ entity_name }}InputPort {
+public class {{ entity_name }}Service implements {{ entity_name }}UseCase {
 
-    private final {{ entity_name }}OutputPort outputPort;
+    private final {{ entity_name }}Repository repository;
 
-    public {{ entity_name }}Service({{ entity_name }}OutputPort outputPort) {
-        this.outputPort = outputPort;
+    public {{ entity_name }}Service({{ entity_name }}Repository repository) {
+        this.repository = repository;
     }
 
     @Override
     public String execute() {
-        return outputPort.findData();
+        return repository.findData();
     }
 }
