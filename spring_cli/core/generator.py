@@ -73,6 +73,7 @@ class ProjectGenerator:
             self._create_scaffolding()
             self._create_ops_files()
             self._create_config_files()
+            self._create_ide_config()
             self._cleanup()
 
             return True
@@ -455,6 +456,35 @@ class ProjectGenerator:
                 console.print("[green]OK[/green] .env.example created")
             except (IOError, OSError) as error:
                 console.print(f"[yellow]Warning: Could not write .env.example: {error}[/yellow]")
+
+    def _create_ide_config(self):
+        idea_dir = self.project_root / ".idea"
+        idea_dir.mkdir(exist_ok=True)
+
+        java_version = self.config.get('javaVersion', '17')
+
+        misc_xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_{java_version}" default="true" project-jdk-name="{java_version}" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/out" />
+  </component>
+</project>'''
+
+        compiler_xml_content = f'''<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="{self.config['artifactId']}" options="-parameters" />
+    </option>
+  </component>
+</project>'''
+
+        try:
+            (idea_dir / "misc.xml").write_text(misc_xml_content, encoding=ENCODING)
+            (idea_dir / "compiler.xml").write_text(compiler_xml_content, encoding=ENCODING)
+            console.print("[green]OK[/green] IDE configuration files created")
+        except (IOError, OSError) as error:
+            console.print(f"[yellow]Warning: Could not write IDE config: {error}[/yellow]")
 
     def _cleanup(self):
         if self.zip_path.exists():
