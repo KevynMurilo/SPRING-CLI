@@ -1,0 +1,20 @@
+package {{ package_name }}.application;
+
+import {{ package_name }}.ports.in.{{ entity_name }}InputPort;
+import {{ package_name }}.ports.out.{{ entity_name }}OutputPort;
+import org.springframework.stereotype.Service;
+
+@Service
+public class {{ entity_name }}Service implements {{ entity_name }}InputPort {
+
+    private final {{ entity_name }}OutputPort outputPort;
+
+    public {{ entity_name }}Service({{ entity_name }}OutputPort outputPort) {
+        this.outputPort = outputPort;
+    }
+
+    @Override
+    public String execute() {
+        return outputPort.findData();
+    }
+}

@@ -1,0 +1,13 @@
+package {{ package_name }}.adapters.out.db;
+
+import {{ package_name }}.ports.out.{{ entity_name }}OutputPort;
+import org.springframework.stereotype.Component;
+
+@Component
+public class {{ entity_name }}Adapter implements {{ entity_name }}OutputPort {
+
+    @Override
+    public String findData() {
+        return "Data from database via adapter";
+    }
+}
