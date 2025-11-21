@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any
 from rich.console import Console
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
-from core.renderer import TemplateRenderer
+from spring_cli.core.renderer import TemplateRenderer
 
 console = Console()
 

@@ -1,11 +1,11 @@
 import sys
 from pathlib import Path
 from rich.console import Console
-from rich.progress import Progress, SpinnerColumn, TextColumn 
-from core import api, cache, generator
-from core.config import config_manager
-from ui import menu
-from ui.banner import (
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from spring_cli.core import api, cache, generator
+from spring_cli.core.config import config_manager
+from spring_cli.ui import menu
+from spring_cli.ui.banner import (
     show_banner,
     show_welcome_message,
     show_success_banner,

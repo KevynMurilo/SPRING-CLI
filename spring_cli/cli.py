@@ -87,7 +87,7 @@ For more information, visit: https://github.com/yourusername/spring-cli
 
 
 def show_config():
-    from core.config import config_manager
+    from spring_cli.core.config import config_manager
 
     console.print("\n[bold cyan]Current Configuration[/bold cyan]\n")
 
@@ -108,7 +108,7 @@ def show_config():
 
 
 def clear_cache():
-    from core.cache import clear_cache as do_clear_cache, CACHE_FILE
+    from spring_cli.core.cache import clear_cache as do_clear_cache, CACHE_FILE
 
     console.print("\n[yellow]Clearing cache...[/yellow]")
 
@@ -119,7 +119,7 @@ def clear_cache():
 
 
 def reset_config():
-    from core.config import config_manager, CONFIG_FILE
+    from spring_cli.core.config import config_manager, CONFIG_FILE
 
     console.print("\n[yellow]Resetting configuration to defaults...[/yellow]")
     config_manager.reset_to_defaults()
@@ -128,8 +128,8 @@ def reset_config():
 
 def show_info():
     import platform
-    from core.cache import CACHE_FILE, CACHE_EXPIRATION_SECONDS
-    from core.config import CONFIG_FILE
+    from spring_cli.core.cache import CACHE_FILE, CACHE_EXPIRATION_SECONDS
+    from spring_cli.core.config import CONFIG_FILE
 
     console.print("\n[bold cyan]System Information[/bold cyan]\n")
 
@@ -156,8 +156,8 @@ def show_info():
 
 
 def run_interactive():
-    from main import main
-    main()
+    from spring_cli.main import main as interactive_main
+    interactive_main()
 
 
 def main():
