@@ -268,9 +268,25 @@ class ProjectGenerator:
     def _extract_package_name(self) -> str:
         return str(self.java_root).replace(os.sep, ".").split("src.main.java.")[-1]
 
-    def _create_security_layer(self, config_path: Path, context: Dict[str, Any]):
+    def _get_package_for_path(self, directory: Path) -> str:
+        base_package = self._extract_package_name()
+
+        if directory == self.java_root:
+            return base_package
+
+        try:
+            relative_path = directory.relative_to(self.java_root)
+            subpackage = str(relative_path).replace(os.sep, ".")
+            return f"{base_package}.{subpackage}"
+        except ValueError:
+            return base_package
+
+    def _create_security_layer(self, config_path: Path, base_context: Dict[str, Any]):
         security_pkg = config_path / "security"
         security_pkg.mkdir(parents=True, exist_ok=True)
+
+        package_name = self._get_package_for_path(config_path)
+        context = {**base_context, "package_name": package_name}
 
         security_files = [
             ("JwtService", "JwtService.java.jinja2"),
@@ -283,8 +299,12 @@ class ProjectGenerator:
 
         console.print("[green]OK[/green] JWT Security layer configured")
 
-    def _create_swagger_config(self, config_path: Path, context: Dict[str, Any]):
+    def _create_swagger_config(self, config_path: Path, base_context: Dict[str, Any]):
         config_path.mkdir(parents=True, exist_ok=True)
+
+        package_name = self._get_package_for_path(config_path)
+        context = {**base_context, "package_name": package_name}
+
         self._write_java_file(config_path, "SwaggerConfig", "SwaggerConfig.java.jinja2", context)
 
     def _create_mvc_structure(self, context: Dict[str, Any]):
@@ -299,7 +319,8 @@ class ProjectGenerator:
             self._create_swagger_config(self.java_root / "config", context)
 
         if "data-jpa" in self.config['dependencies']:
-            entity_context = {**context, "folder": "model"}
+            model_package = self._get_package_for_path(self.java_root / "model")
+            entity_context = {**context, "package_name": model_package, "folder": "model"}
             self._write_java_file(self.java_root / "model", "Demo", "Entity.java.jinja2", entity_context)
 
         artifacts = [
@@ -310,7 +331,9 @@ class ProjectGenerator:
 
         for folder, suffix, template in artifacts:
             target_dir = self.java_root / folder
-            self._write_java_file(target_dir, f"Demo{suffix}", template, context)
+            pkg_name = self._get_package_for_path(target_dir)
+            ctx = {**context, "package_name": pkg_name}
+            self._write_java_file(target_dir, f"Demo{suffix}", template, ctx)
 
     def _create_feature_structure(self, context: Dict[str, Any]):
         base = self.java_root / "features/demo"
@@ -329,7 +352,8 @@ class ProjectGenerator:
             self._create_swagger_config(config_base, context)
 
         if "data-jpa" in self.config['dependencies']:
-            entity_context = {**context, "folder": "model"}
+            model_package = self._get_package_for_path(base / "model")
+            entity_context = {**context, "package_name": model_package, "folder": "model"}
             self._write_java_file(base / "model", "Demo", "Entity.java.jinja2", entity_context)
 
         artifacts = [
@@ -340,7 +364,9 @@ class ProjectGenerator:
 
         for folder, suffix, template in artifacts:
             target_dir = base / folder
-            self._write_java_file(target_dir, f"Demo{suffix}", template, context)
+            pkg_name = self._get_package_for_path(target_dir)
+            ctx = {**context, "package_name": pkg_name}
+            self._write_java_file(target_dir, f"Demo{suffix}", template, ctx)
 
     def _create_clean_structure(self, context: Dict[str, Any]):
         folders = ['domain/model', 'domain/repository', 'application/usecase', 'infrastructure/persistence', 'infrastructure/controller', 'infrastructure/config']
@@ -354,7 +380,8 @@ class ProjectGenerator:
             self._create_swagger_config(self.java_root / "infrastructure/config", context)
 
         if "data-jpa" in self.config['dependencies']:
-            entity_context = {**context, "folder": "model"}
+            model_package = self._get_package_for_path(self.java_root / "domain/model")
+            entity_context = {**context, "package_name": model_package, "folder": "model"}
             self._write_java_file(self.java_root / "domain/model", "Demo", "Entity.java.jinja2", entity_context)
 
         artifacts = [
@@ -366,7 +393,9 @@ class ProjectGenerator:
 
         for folder, filename, template in artifacts:
             target_dir = self.java_root / folder
-            self._write_java_file(target_dir, filename, template, context)
+            pkg_name = self._get_package_for_path(target_dir)
+            ctx = {**context, "package_name": pkg_name}
+            self._write_java_file(target_dir, filename, template, ctx)
 
     def _create_hexagonal_structure(self, context: Dict[str, Any]):
         folders = ['domain/model', 'application/service', 'application/port/in', 'application/port/out', 'adapter/in/web', 'adapter/out/persistence', 'infrastructure/config']
@@ -380,7 +409,8 @@ class ProjectGenerator:
             self._create_swagger_config(self.java_root / "infrastructure/config", context)
 
         if "data-jpa" in self.config['dependencies']:
-            entity_context = {**context, "folder": "model"}
+            model_package = self._get_package_for_path(self.java_root / "domain/model")
+            entity_context = {**context, "package_name": model_package, "folder": "model"}
             self._write_java_file(self.java_root / "domain/model", "Demo", "Entity.java.jinja2", entity_context)
 
         artifacts = [
@@ -393,7 +423,9 @@ class ProjectGenerator:
 
         for folder, filename, template in artifacts:
             target_dir = self.java_root / folder
-            self._write_java_file(target_dir, filename, template, context)
+            pkg_name = self._get_package_for_path(target_dir)
+            ctx = {**context, "package_name": pkg_name}
+            self._write_java_file(target_dir, filename, template, ctx)
 
     def _write_java_file(
         self,
