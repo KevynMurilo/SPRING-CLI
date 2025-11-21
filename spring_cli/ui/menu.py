@@ -77,8 +77,10 @@ def ask_project_details(metadata: Dict[str, Any], defaults: Optional[Dict[str, A
             "message": "Project Structure:",
             "choices": [
                 Choice("none", "Default Spring (Empty)"),
-                Choice("mvc", "MVC (Controller, Service, Repository)"),
-                Choice("feature", "Feature/Domain Driven")
+                Choice("mvc", "MVC (controller/service/repository/model)"),
+                Choice("feature", "Feature/Domain Driven"),
+                Choice("clean", "Clean Architecture (domain/application/infrastructure)"),
+                Choice("hexagonal", "Hexagonal (domain/application/ports/adapters)")
             ],
             "default": defaults.get('structure', DEFAULT_STRUCTURE)
         }
