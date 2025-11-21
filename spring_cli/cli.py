@@ -113,9 +113,9 @@ def clear_cache():
     console.print("\n[yellow]Clearing cache...[/yellow]")
 
     if do_clear_cache():
-        console.print(f"[green]✓[/green] Cache cleared: {CACHE_FILE}\n")
+        console.print(f"[green]OK[/green] Cache cleared: {CACHE_FILE}\n")
     else:
-        console.print(f"[yellow]⚠[/yellow] No cache file found or couldn't clear\n")
+        console.print(f"[yellow]Warning[/yellow] No cache file found or couldn't clear\n")
 
 
 def reset_config():
@@ -123,7 +123,7 @@ def reset_config():
 
     console.print("\n[yellow]Resetting configuration to defaults...[/yellow]")
     config_manager.reset_to_defaults()
-    console.print(f"[green]✓[/green] Configuration reset: {CONFIG_FILE}\n")
+    console.print(f"[green]OK[/green] Configuration reset: {CONFIG_FILE}\n")
 
 
 def show_info():
@@ -145,11 +145,11 @@ def show_info():
     table.add_section()
     table.add_row("Cache File", str(CACHE_FILE))
     table.add_row("Cache Expiry", f"{CACHE_EXPIRATION_SECONDS // 3600} hours")
-    table.add_row("Cache Exists", "✓" if CACHE_FILE.exists() else "✗")
+    table.add_row("Cache Exists", "Yes" if CACHE_FILE.exists() else "No")
 
     table.add_section()
     table.add_row("Config File", str(CONFIG_FILE))
-    table.add_row("Config Exists", "✓" if CONFIG_FILE.exists() else "✗")
+    table.add_row("Config Exists", "Yes" if CONFIG_FILE.exists() else "No")
 
     console.print(table)
     console.print()
