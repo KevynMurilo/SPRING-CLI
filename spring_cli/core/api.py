@@ -1,4 +1,6 @@
+import os
 import requests
+from pathlib import Path
 from rich.console import Console
 
 BASE_URL = "https://start.spring.io"
@@ -52,6 +54,9 @@ def download_project(config, filename):
     except requests.RequestException as error:
         console.print(f"[bold red]Download failed:[/bold red] {error}")
         return False
+    except (PermissionError, IOError, OSError) as error:
+        console.print(f"[bold red]File system error:[/bold red] {error}")
+        return False
 
 
 def _sanitize_config(config):
@@ -66,10 +71,21 @@ def _sanitize_config(config):
 
 
 def _write_zip_file(response, filename):
-    with open(filename, 'wb') as file:
-        for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
-            if chunk:
-                file.write(chunk)
+    file_path = Path(filename)
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    try:
+        with open(file_path, 'wb') as file:
+            for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
+                if chunk:
+                    file.write(chunk)
+    except PermissionError as error:
+        console.print(f"[bold red]Permission denied:[/bold red] {error}")
+        console.print(f"[yellow]Try running as administrator or check file permissions[/yellow]")
+        raise
+    except (IOError, OSError) as error:
+        console.print(f"[bold red]Error writing file:[/bold red] {error}")
+        raise
 
 
 def _handle_http_error(error):

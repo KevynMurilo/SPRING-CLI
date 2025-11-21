@@ -1,4 +1,5 @@
 import sys
+import tempfile
 from pathlib import Path
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -109,12 +110,33 @@ def _review_and_confirm(config, metadata):
 
 
 def _generate_project(config):
-    zip_name = f"{config['artifactId']}.zip"
+    from InquirerPy import inquirer
+    temp_dir = Path(tempfile.gettempdir())
+
+    while True:
+        zip_name = temp_dir / f"{config['artifactId']}.zip"
+
+        if zip_name.exists():
+            console.print(f"\n[bold yellow]Arquivo '{zip_name.name}' ja existe no diretorio temporario![/bold yellow]")
+
+            new_artifact = inquirer.text(
+                message="Escolha um novo nome para o projeto:",
+                default=config['artifactId'],
+                validate=lambda x: len(x) > 0,
+                invalid_message="Nome nao pode ser vazio."
+            ).execute()
+
+            config['artifactId'] = new_artifact
+            console.print(f"[yellow]Tentando novamente com: {new_artifact}...[/yellow]\n")
+            continue
+
+        break
+
     console.print()
 
     console.print("[cyan]→[/cyan] Downloading project from Spring Initializr...")
 
-    if not api.download_project(config, zip_name):
+    if not api.download_project(config, str(zip_name)):
         show_error_banner("Failed to download project")
         return
 
@@ -122,7 +144,7 @@ def _generate_project(config):
 
     console.print("[cyan]→[/cyan] Extracting and configuring project...")
 
-    project_generator = generator.ProjectGenerator(zip_name, config)
+    project_generator = generator.ProjectGenerator(str(zip_name), config)
 
     if not project_generator.execute():
         show_error_banner("Failed to generate project")

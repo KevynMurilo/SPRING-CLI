@@ -117,21 +117,32 @@ class ProjectGenerator:
 
     def _extract_project(self):
         temp_dir = self.base_parent / f".temp_{self.config['artifactId']}"
-        if temp_dir.exists():
-            shutil.rmtree(temp_dir)
-        temp_dir.mkdir()
+        try:
+            if temp_dir.exists():
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            temp_dir.mkdir(parents=True, exist_ok=True)
 
-        with zipfile.ZipFile(self.zip_path, 'r') as zip_file:
-            zip_file.extractall(temp_dir)
+            with zipfile.ZipFile(self.zip_path, 'r') as zip_file:
+                zip_file.extractall(temp_dir)
 
-        items = list(temp_dir.iterdir())
-        source_dir = items[0] if len(items) == 1 and items[0].is_dir() else temp_dir
+            items = list(temp_dir.iterdir())
+            source_dir = items[0] if len(items) == 1 and items[0].is_dir() else temp_dir
 
-        self.project_root.mkdir()
-        for item in source_dir.iterdir():
-            shutil.move(str(item), str(self.project_root))
+            self.project_root.mkdir(parents=True, exist_ok=True)
+            for item in source_dir.iterdir():
+                dest = self.project_root / item.name
+                if dest.exists():
+                    if dest.is_dir():
+                        shutil.rmtree(dest, ignore_errors=True)
+                    else:
+                        dest.unlink()
+                shutil.move(str(item), str(self.project_root))
 
-        shutil.rmtree(temp_dir)
+            shutil.rmtree(temp_dir, ignore_errors=True)
+        except Exception as error:
+            if temp_dir.exists():
+                shutil.rmtree(temp_dir, ignore_errors=True)
+            raise
 
     def _detect_paths(self):
         for path in self.project_root.rglob("*.java"):
@@ -404,7 +415,13 @@ class ProjectGenerator:
 
     def _cleanup(self):
         if self.zip_path.exists():
-            try:
-                self.zip_path.unlink()
-            except (IOError, OSError):
-                pass
+            import time
+            for attempt in range(3):
+                try:
+                    self.zip_path.unlink()
+                    break
+                except (IOError, OSError):
+                    if attempt < 2:
+                        time.sleep(0.1)
+                    else:
+                        pass
