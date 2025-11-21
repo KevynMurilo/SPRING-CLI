@@ -266,13 +266,8 @@ This project is licensed under the MIT License - see the [LICENSE](https://www.g
 
 -----
 
-\<div align="center"\>
-
 **Made with ❤️ for the Spring Boot community**
 
 ⭐ Star this repo if it helped you\!
 
-\</div\>
 
-```
-```
