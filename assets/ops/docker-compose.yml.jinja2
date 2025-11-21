@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+    depends_on:
+      {% if database == 'postgresql' %}
+      - db
+      {% elif database == 'mysql' %}
+      - db
+      {% endif %}
+
+  {% if database == 'postgresql' %}
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: meubanco
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  {% elif database == 'mysql' %}
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: meubanco
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+  {% endif %}
+
+volumes:
+  {% if database == 'postgresql' %}
+  postgres_data:
+  {% elif database == 'mysql' %}
+  mysql_data:
+  {% endif %}
