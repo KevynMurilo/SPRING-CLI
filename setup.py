@@ -42,7 +42,8 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "spring-cli=main:main",
+            "spring-cli=cli:main",
         ],
     },
+    py_modules=["cli", "main"],
 )
