@@ -304,14 +304,14 @@ class ProjectGenerator:
 
     def _create_feature_structure(self, context: Dict[str, Any]):
         base = self.java_root / "features/demo"
-        feature_map = {
-            "controller": "web",
-            "service": "domain",
-            "repository": "data"
-        }
+        folders = ['controller', 'service', 'repository', 'model']
 
-        for folder in feature_map.values():
+        for folder in folders:
             (base / folder).mkdir(parents=True, exist_ok=True)
+
+        if "data-jpa" in self.config['dependencies']:
+            entity_context = {**context, "folder": "model"}
+            self._write_java_file(base / "model", "Demo", "Entity.java.jinja2", entity_context)
 
         artifacts = [
             ("controller", "Controller", "Controller.java.jinja2"),
@@ -319,20 +319,24 @@ class ProjectGenerator:
             ("repository", "Repository", "Repository.java.jinja2")
         ]
 
-        for key, suffix, template in artifacts:
-            target_dir = base / feature_map[key]
+        for folder, suffix, template in artifacts:
+            target_dir = base / folder
             self._write_java_file(target_dir, f"Demo{suffix}", template, context)
 
     def _create_clean_structure(self, context: Dict[str, Any]):
-        folders = ['domain/entity', 'application/usecase', 'infrastructure/web', 'infrastructure/db']
+        folders = ['domain/model', 'domain/repository', 'application/usecase', 'infrastructure/persistence', 'infrastructure/controller', 'infrastructure/config']
         for folder in folders:
             (self.java_root / folder).mkdir(parents=True, exist_ok=True)
 
+        if "data-jpa" in self.config['dependencies']:
+            entity_context = {**context, "folder": "model"}
+            self._write_java_file(self.java_root / "domain/model", "Demo", "Entity.java.jinja2", entity_context)
+
         artifacts = [
-            ("domain/entity", "Demo", "DomainEntity.java.jinja2"),
+            ("domain/repository", "DemoRepository", "PortOut.java.jinja2"),
             ("application/usecase", "DemoUseCase", "UseCase.java.jinja2"),
-            ("infrastructure/web", "DemoController", "InfraController.java.jinja2"),
-            ("infrastructure/db", "DemoRepositoryImpl", "InfraRepository.java.jinja2")
+            ("infrastructure/controller", "DemoController", "InfraController.java.jinja2"),
+            ("infrastructure/persistence", "DemoRepositoryImpl", "InfraRepository.java.jinja2")
         ]
 
         for folder, filename, template in artifacts:
@@ -340,17 +344,20 @@ class ProjectGenerator:
             self._write_java_file(target_dir, filename, template, context)
 
     def _create_hexagonal_structure(self, context: Dict[str, Any]):
-        folders = ['domain', 'application', 'ports/in', 'ports/out', 'adapters/in/web', 'adapters/out/db']
+        folders = ['domain/model', 'application/service', 'application/port/in', 'application/port/out', 'adapter/in/web', 'adapter/out/persistence']
         for folder in folders:
             (self.java_root / folder).mkdir(parents=True, exist_ok=True)
 
+        if "data-jpa" in self.config['dependencies']:
+            entity_context = {**context, "folder": "model"}
+            self._write_java_file(self.java_root / "domain/model", "Demo", "Entity.java.jinja2", entity_context)
+
         artifacts = [
-            ("domain", "Demo", "DomainModel.java.jinja2"),
-            ("application", "DemoService", "ApplicationService.java.jinja2"),
-            ("ports/in", "DemoInputPort", "PortIn.java.jinja2"),
-            ("ports/out", "DemoOutputPort", "PortOut.java.jinja2"),
-            ("adapters/in/web", "DemoController", "AdapterIn.java.jinja2"),
-            ("adapters/out/db", "DemoAdapter", "AdapterOut.java.jinja2")
+            ("application/port/in", "DemoUseCase", "PortIn.java.jinja2"),
+            ("application/port/out", "DemoRepository", "PortOut.java.jinja2"),
+            ("application/service", "DemoService", "ApplicationService.java.jinja2"),
+            ("adapter/in/web", "DemoController", "AdapterIn.java.jinja2"),
+            ("adapter/out/persistence", "DemoRepositoryAdapter", "AdapterOut.java.jinja2")
         ]
 
         for folder, filename, template in artifacts:
