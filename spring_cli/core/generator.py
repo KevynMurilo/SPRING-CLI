@@ -256,12 +256,6 @@ class ProjectGenerator:
         package_name = self._extract_package_name()
         context = {"package_name": package_name, "entity_name": "Demo"}
 
-        if self.config.get('use_jwt'):
-            self._create_security_layer(context)
-
-        if "web" in self.config['dependencies']:
-            self._create_swagger_config(context)
-
         if structure == 'mvc':
             self._create_mvc_structure(context)
         elif structure == 'feature':
@@ -274,8 +268,8 @@ class ProjectGenerator:
     def _extract_package_name(self) -> str:
         return str(self.java_root).replace(os.sep, ".").split("src.main.java.")[-1]
 
-    def _create_security_layer(self, context: Dict[str, Any]):
-        security_pkg = self.java_root / "security"
+    def _create_security_layer(self, config_path: Path, context: Dict[str, Any]):
+        security_pkg = config_path / "security"
         security_pkg.mkdir(parents=True, exist_ok=True)
 
         security_files = [
@@ -289,15 +283,20 @@ class ProjectGenerator:
 
         console.print("[green]OK[/green] JWT Security layer configured")
 
-    def _create_swagger_config(self, context: Dict[str, Any]):
-        config_pkg = self.java_root / "config"
-        config_pkg.mkdir(parents=True, exist_ok=True)
-        self._write_java_file(config_pkg, "SwaggerConfig", "SwaggerConfig.java.jinja2", context)
+    def _create_swagger_config(self, config_path: Path, context: Dict[str, Any]):
+        config_path.mkdir(parents=True, exist_ok=True)
+        self._write_java_file(config_path, "SwaggerConfig", "SwaggerConfig.java.jinja2", context)
 
     def _create_mvc_structure(self, context: Dict[str, Any]):
-        folders = ['controller', 'service', 'repository', 'model']
+        folders = ['controller', 'service', 'repository', 'model', 'config']
         for folder in folders:
             (self.java_root / folder).mkdir(parents=True, exist_ok=True)
+
+        if self.config.get('use_jwt'):
+            self._create_security_layer(self.java_root / "config", context)
+
+        if "web" in self.config['dependencies']:
+            self._create_swagger_config(self.java_root / "config", context)
 
         if "data-jpa" in self.config['dependencies']:
             entity_context = {**context, "folder": "model"}
@@ -320,6 +319,15 @@ class ProjectGenerator:
         for folder in folders:
             (base / folder).mkdir(parents=True, exist_ok=True)
 
+        config_base = self.java_root / "config"
+        config_base.mkdir(parents=True, exist_ok=True)
+
+        if self.config.get('use_jwt'):
+            self._create_security_layer(config_base, context)
+
+        if "web" in self.config['dependencies']:
+            self._create_swagger_config(config_base, context)
+
         if "data-jpa" in self.config['dependencies']:
             entity_context = {**context, "folder": "model"}
             self._write_java_file(base / "model", "Demo", "Entity.java.jinja2", entity_context)
@@ -339,6 +347,12 @@ class ProjectGenerator:
         for folder in folders:
             (self.java_root / folder).mkdir(parents=True, exist_ok=True)
 
+        if self.config.get('use_jwt'):
+            self._create_security_layer(self.java_root / "infrastructure/config", context)
+
+        if "web" in self.config['dependencies']:
+            self._create_swagger_config(self.java_root / "infrastructure/config", context)
+
         if "data-jpa" in self.config['dependencies']:
             entity_context = {**context, "folder": "model"}
             self._write_java_file(self.java_root / "domain/model", "Demo", "Entity.java.jinja2", entity_context)
@@ -355,9 +369,15 @@ class ProjectGenerator:
             self._write_java_file(target_dir, filename, template, context)
 
     def _create_hexagonal_structure(self, context: Dict[str, Any]):
-        folders = ['domain/model', 'application/service', 'application/port/in', 'application/port/out', 'adapter/in/web', 'adapter/out/persistence']
+        folders = ['domain/model', 'application/service', 'application/port/in', 'application/port/out', 'adapter/in/web', 'adapter/out/persistence', 'infrastructure/config']
         for folder in folders:
             (self.java_root / folder).mkdir(parents=True, exist_ok=True)
+
+        if self.config.get('use_jwt'):
+            self._create_security_layer(self.java_root / "infrastructure/config", context)
+
+        if "web" in self.config['dependencies']:
+            self._create_swagger_config(self.java_root / "infrastructure/config", context)
 
         if "data-jpa" in self.config['dependencies']:
             entity_context = {**context, "folder": "model"}
