@@ -180,7 +180,7 @@ class ProjectGenerator:
                 f"<dependencies>{dependency_xml}"
             )
             pom_path.write_text(new_content, encoding=ENCODING)
-            console.print(f"[green]✔ {name} injected into pom.xml[/green]")
+            console.print(f"[green]OK[/green] {name} injected into pom.xml")
 
         except (IOError, OSError) as error:
             console.print(f"[yellow]Warning: Could not modify pom.xml: {error}[/yellow]")
@@ -215,7 +215,7 @@ class ProjectGenerator:
         self._write_ops_file("Dockerfile.jinja2", "Dockerfile", context)
         self._write_ops_file("docker-compose.yml.jinja2", "docker-compose.yml", context)
 
-        console.print("[green]✔ Docker files generated[/green]")
+        console.print("[green]OK[/green] Docker files generated")
 
     def _detect_database_type(self, dependencies: str) -> str:
         if "postgresql" in dependencies:
@@ -255,6 +255,10 @@ class ProjectGenerator:
             self._create_mvc_structure(context)
         elif structure == 'feature':
             self._create_feature_structure(context)
+        elif structure == 'clean':
+            self._create_clean_structure(context)
+        elif structure == 'hexagonal':
+            self._create_hexagonal_structure(context)
 
     def _extract_package_name(self) -> str:
         return str(self.java_root).replace(os.sep, ".").split("src.main.java.")[-1]
@@ -272,7 +276,7 @@ class ProjectGenerator:
         for filename, template in security_files:
             self._write_java_file(security_pkg, filename, template, context)
 
-        console.print("[green]✔ JWT Security layer configured[/green]")
+        console.print("[green]OK[/green] JWT Security layer configured")
 
     def _create_swagger_config(self, context: Dict[str, Any]):
         config_pkg = self.java_root / "config"
@@ -283,6 +287,10 @@ class ProjectGenerator:
         folders = ['controller', 'service', 'repository', 'model']
         for folder in folders:
             (self.java_root / folder).mkdir(parents=True, exist_ok=True)
+
+        if "data-jpa" in self.config['dependencies']:
+            entity_context = {**context, "folder": "model"}
+            self._write_java_file(self.java_root / "model", "Demo", "Entity.java.jinja2", entity_context)
 
         artifacts = [
             ("controller", "Controller", "Controller.java.jinja2"),
@@ -314,6 +322,40 @@ class ProjectGenerator:
         for key, suffix, template in artifacts:
             target_dir = base / feature_map[key]
             self._write_java_file(target_dir, f"Demo{suffix}", template, context)
+
+    def _create_clean_structure(self, context: Dict[str, Any]):
+        folders = ['domain/entity', 'application/usecase', 'infrastructure/web', 'infrastructure/db', 'infrastructure/config']
+        for folder in folders:
+            (self.java_root / folder).mkdir(parents=True, exist_ok=True)
+
+        artifacts = [
+            ("domain/entity", "Demo", "DomainEntity.java.jinja2"),
+            ("application/usecase", "DemoUseCase", "UseCase.java.jinja2"),
+            ("infrastructure/web", "DemoController", "InfraController.java.jinja2"),
+            ("infrastructure/db", "DemoRepositoryImpl", "InfraRepository.java.jinja2")
+        ]
+
+        for folder, filename, template in artifacts:
+            target_dir = self.java_root / folder
+            self._write_java_file(target_dir, filename, template, context)
+
+    def _create_hexagonal_structure(self, context: Dict[str, Any]):
+        folders = ['domain', 'application', 'ports/in', 'ports/out', 'adapters/in/web', 'adapters/out/db']
+        for folder in folders:
+            (self.java_root / folder).mkdir(parents=True, exist_ok=True)
+
+        artifacts = [
+            ("domain", "Demo", "DomainModel.java.jinja2"),
+            ("application", "DemoService", "ApplicationService.java.jinja2"),
+            ("ports/in", "DemoInputPort", "PortIn.java.jinja2"),
+            ("ports/out", "DemoOutputPort", "PortOut.java.jinja2"),
+            ("adapters/in/web", "DemoController", "AdapterIn.java.jinja2"),
+            ("adapters/out/db", "DemoAdapter", "AdapterOut.java.jinja2")
+        ]
+
+        for folder, filename, template in artifacts:
+            target_dir = self.java_root / folder
+            self._write_java_file(target_dir, filename, template, context)
 
     def _write_java_file(
         self,
@@ -349,7 +391,7 @@ class ProjectGenerator:
         if env_content:
             try:
                 (self.project_root / ".env.example").write_text(env_content, encoding=ENCODING)
-                console.print("[green]✔[/green] .env.example created")
+                console.print("[green]OK[/green] .env.example created")
             except (IOError, OSError) as error:
                 console.print(f"[yellow]Warning: Could not write .env.example: {error}[/yellow]")
 
