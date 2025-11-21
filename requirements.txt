@@ -1,0 +1,4 @@
+requests
+inquirerpy
+rich
+jinja2
