@@ -1,0 +1,34 @@
+package {{ package_name }};
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
+
+import java.time.OffsetDateTime;
+
+@Getter
+@ToString
+@RequiredArgsConstructor
+public class ApiResponseDTO<T> {
+
+    private final int statusCode;
+    private final String message;
+    private final T data;
+    private final OffsetDateTime timestamp;
+
+    public static <T> ApiResponseDTO<T> success(int statusCode, String message, T data) {
+        return new ApiResponseDTO<>(statusCode, message, data, OffsetDateTime.now());
+    }
+
+    public static <T> ApiResponseDTO<T> success(int statusCode, String message) {
+        return new ApiResponseDTO<>(statusCode, message, null, OffsetDateTime.now());
+    }
+
+    public static <T> ApiResponseDTO<T> error(int statusCode, String message) {
+        return new ApiResponseDTO<>(statusCode, message, null, OffsetDateTime.now());
+    }
+
+    public static <T> ApiResponseDTO<T> empty(int statusCode, String message) {
+        return new ApiResponseDTO<>(statusCode, message, null, OffsetDateTime.now());
+    }
+}
