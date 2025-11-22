@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import zipfile
 from pathlib import Path
@@ -66,9 +67,10 @@ class ProjectGenerator:
             if self.config.get('use_jwt'):
                 self._inject_jwt_dependencies()
 
-            if "web" in self.config['dependencies']:
+            if self.config.get('use_swagger'):
                 self._inject_swagger_dependency()
 
+            self._configure_maven_plugins()
             self._inject_properties()
             self._create_scaffolding()
             self._create_ops_files()
@@ -166,6 +168,37 @@ class ProjectGenerator:
 
     def _inject_swagger_dependency(self):
         self._inject_pom_dependency(SWAGGER_DEPENDENCY, "Swagger UI", "springdoc")
+
+    def _configure_maven_plugins(self):
+        pom_path = self.project_root / "pom.xml"
+        if not pom_path.exists():
+            return
+
+        try:
+            content = pom_path.read_text(encoding=ENCODING)
+
+            # Check if spring-boot-maven-plugin already has configuration
+            if "<build>" in content and "spring-boot-maven-plugin" in content:
+                # Only add configuration if it doesn't exist
+                if "<configuration>" not in content or "spring-boot.run.jvmArguments" not in content:
+                    # Find the spring-boot-maven-plugin and add configuration
+                    plugin_pattern = r'(<artifactId>spring-boot-maven-plugin</artifactId>)'
+                    if re.search(plugin_pattern, content):
+                        plugin_config = """
+                    <configuration>
+                        <jvmArguments>-Dspring-boot.run.jvmArguments="-Dfile.encoding=UTF-8"</jvmArguments>
+                    </configuration>"""
+
+                        content = re.sub(
+                            r'(<artifactId>spring-boot-maven-plugin</artifactId>\s*</plugin>)',
+                            r'<artifactId>spring-boot-maven-plugin</artifactId>' + plugin_config + r'\n\t\t\t</plugin>',
+                            content
+                        )
+                        pom_path.write_text(content, encoding=ENCODING)
+                        console.print("[green]OK[/green] Maven plugins configured")
+
+        except (IOError, OSError) as error:
+            console.print(f"[yellow]Warning: Could not configure Maven plugins: {error}[/yellow]")
 
     def _inject_pom_dependency(
         self,
@@ -308,6 +341,23 @@ class ProjectGenerator:
 
         self._write_java_file(config_path, "SwaggerConfig", "SwaggerConfig.java.jinja2", context)
 
+    def _create_exception_handler(self, exception_path: Path, base_context: Dict[str, Any]):
+        exception_path.mkdir(parents=True, exist_ok=True)
+
+        package_name = self._get_package_for_path(exception_path)
+        context = {**base_context, "package_name": package_name}
+
+        exception_files = [
+            ("GlobalExceptionHandler", "GlobalExceptionHandler.java.jinja2"),
+            ("ResourceNotFoundException", "ResourceNotFoundException.java.jinja2"),
+            ("BadRequestException", "BadRequestException.java.jinja2")
+        ]
+
+        for filename, template in exception_files:
+            self._write_java_file(exception_path, filename, template, context)
+
+        console.print("[green]OK[/green] Global Exception Handler configured")
+
     def _create_mvc_structure(self, context: Dict[str, Any]):
         folders = ['controller', 'service', 'repository', 'model', 'config']
         for folder in folders:
@@ -316,8 +366,11 @@ class ProjectGenerator:
         if self.config.get('use_jwt'):
             self._create_security_layer(self.java_root / "config", context)
 
-        if "web" in self.config['dependencies']:
+        if self.config.get('use_swagger'):
             self._create_swagger_config(self.java_root / "config", context)
+
+        if self.config.get('use_exception_handler'):
+            self._create_exception_handler(self.java_root / "exception", context)
 
         if "data-jpa" in self.config['dependencies']:
             entity_context = {**context, "folder": "model"}
@@ -346,8 +399,12 @@ class ProjectGenerator:
         if self.config.get('use_jwt'):
             self._create_security_layer(config_base, context)
 
-        if "web" in self.config['dependencies']:
+        if self.config.get('use_swagger'):
             self._create_swagger_config(config_base, context)
+
+        if self.config.get('use_exception_handler'):
+            exception_base = self.java_root / "exception"
+            self._create_exception_handler(exception_base, context)
 
         base_package = self._get_package_for_path(base)
         feature_context = {**context, "package_name": base_package}
@@ -374,8 +431,11 @@ class ProjectGenerator:
         if self.config.get('use_jwt'):
             self._create_security_layer(self.java_root / "infrastructure/config", context)
 
-        if "web" in self.config['dependencies']:
+        if self.config.get('use_swagger'):
             self._create_swagger_config(self.java_root / "infrastructure/config", context)
+
+        if self.config.get('use_exception_handler'):
+            self._create_exception_handler(self.java_root / "infrastructure/exception", context)
 
         base_package = self._extract_package_name()
 
@@ -404,8 +464,11 @@ class ProjectGenerator:
         if self.config.get('use_jwt'):
             self._create_security_layer(self.java_root / "infrastructure/config", context)
 
-        if "web" in self.config['dependencies']:
+        if self.config.get('use_swagger'):
             self._create_swagger_config(self.java_root / "infrastructure/config", context)
+
+        if self.config.get('use_exception_handler'):
+            self._create_exception_handler(self.java_root / "infrastructure/exception", context)
 
         base_package = self._extract_package_name()
 
