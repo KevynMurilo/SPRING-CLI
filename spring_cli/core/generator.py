@@ -37,6 +37,14 @@ SWAGGER_DEPENDENCY = """
         </dependency>
         """
 
+LOMBOK_DEPENDENCY = """
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        """
+
 ENCODING = "utf-8"
 SPRING_BOOT_ANNOTATION = "@SpringBootApplication"
 
@@ -69,6 +77,9 @@ class ProjectGenerator:
 
             if self.config.get('use_swagger'):
                 self._inject_swagger_dependency()
+
+            if self.config.get('use_exception_handler'):
+                self._inject_lombok_dependency()
 
             self._configure_maven_plugins()
             self._inject_properties()
@@ -169,11 +180,23 @@ class ProjectGenerator:
     def _inject_swagger_dependency(self):
         self._inject_pom_dependency(SWAGGER_DEPENDENCY, "Swagger UI", "springdoc")
 
-    def _configure_maven_plugins(self):
-        pom_path = self.project_root / "pom.xml"
-        if not pom_path.exists():
-            return
+    def _inject_lombok_dependency(self):
+        self._inject_pom_dependency(LOMBOK_DEPENDENCY, "Lombok", "lombok")
 
+    def _configure_maven_plugins(self):
+        """Configure build tool plugins (Maven or Gradle)"""
+        pom_path = self.project_root / "pom.xml"
+        gradle_path = self.project_root / "build.gradle"
+        gradle_kts_path = self.project_root / "build.gradle.kts"
+
+        if pom_path.exists():
+            self._configure_maven_plugin(pom_path)
+        elif gradle_path.exists():
+            self._configure_gradle_plugin(gradle_path, is_kotlin=False)
+        elif gradle_kts_path.exists():
+            self._configure_gradle_plugin(gradle_kts_path, is_kotlin=True)
+
+    def _configure_maven_plugin(self, pom_path: Path):
         try:
             content = pom_path.read_text(encoding=ENCODING)
 
@@ -199,6 +222,31 @@ class ProjectGenerator:
 
         except (IOError, OSError) as error:
             console.print(f"[yellow]Warning: Could not configure Maven plugins: {error}[/yellow]")
+
+    def _configure_gradle_plugin(self, gradle_path: Path, is_kotlin: bool):
+        try:
+            content = gradle_path.read_text(encoding=ENCODING)
+
+            # Check if bootRun task already has jvmArgs configuration
+            if "bootRun" not in content or "jvmArgs" not in content:
+                if is_kotlin:
+                    bootrun_config = """
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    jvmArgs = listOf("-Dfile.encoding=UTF-8")
+}
+"""
+                else:
+                    bootrun_config = """
+tasks.named('bootRun') {
+    jvmArgs = ['-Dfile.encoding=UTF-8']
+}
+"""
+                content += "\n" + bootrun_config
+                gradle_path.write_text(content, encoding=ENCODING)
+                console.print("[green]OK[/green] Gradle plugins configured")
+
+        except (IOError, OSError) as error:
+            console.print(f"[yellow]Warning: Could not configure Gradle plugins: {error}[/yellow]")
 
     def _inject_pom_dependency(
         self,
@@ -345,7 +393,8 @@ class ProjectGenerator:
         exception_path.mkdir(parents=True, exist_ok=True)
 
         package_name = self._get_package_for_path(exception_path)
-        context = {**base_context, "package_name": package_name}
+        base_package = self._extract_package_name()
+        context = {**base_context, "package_name": package_name, "base_package": base_package}
 
         exception_files = [
             ("GlobalExceptionHandler", "GlobalExceptionHandler.java.jinja2"),
@@ -358,19 +407,54 @@ class ProjectGenerator:
 
         console.print("[green]OK[/green] Global Exception Handler configured")
 
+    def _create_dto_layer(self, dto_path: Path, base_context: Dict[str, Any]):
+        dto_path.mkdir(parents=True, exist_ok=True)
+
+        package_name = self._get_package_for_path(dto_path)
+        context = {**base_context, "package_name": package_name}
+
+        dto_files = [
+            ("ApiResponseDTO", "ApiResponseDTO.java.jinja2"),
+            ("PagedResponseDTO", "PagedResponseDTO.java.jinja2")
+        ]
+
+        for filename, template in dto_files:
+            self._write_java_file(dto_path, filename, template, context)
+
+        console.print("[green]OK[/green] DTO layer configured")
+
+    def _setup_common_layers(self, config_path: Path, context: Dict[str, Any]):
+        """Setup common layers (security, swagger, exception handler, DTOs) for any architecture"""
+        if self.config.get('use_jwt'):
+            self._create_security_layer(config_path, context)
+
+        if self.config.get('use_swagger'):
+            self._create_swagger_config(config_path, context)
+
+        if self.config.get('use_exception_handler'):
+            # Determine exception handler path based on architecture
+            if "infrastructure" in str(config_path):
+                exception_path = config_path.parent / "exception"
+            else:
+                exception_path = self.java_root / "exception"
+
+            self._create_exception_handler(exception_path, context)
+
+            # Create DTO layer alongside exception handler
+            if "infrastructure" in str(exception_path):
+                dto_path = exception_path.parent / "dto"
+            else:
+                dto_path = self.java_root / "dto"
+
+            self._create_dto_layer(dto_path, context)
+
     def _create_mvc_structure(self, context: Dict[str, Any]):
         folders = ['controller', 'service', 'repository', 'model', 'config']
         for folder in folders:
             (self.java_root / folder).mkdir(parents=True, exist_ok=True)
 
-        if self.config.get('use_jwt'):
-            self._create_security_layer(self.java_root / "config", context)
-
-        if self.config.get('use_swagger'):
-            self._create_swagger_config(self.java_root / "config", context)
-
-        if self.config.get('use_exception_handler'):
-            self._create_exception_handler(self.java_root / "exception", context)
+        # Setup common layers (security, swagger, exception handler, DTOs)
+        self._setup_common_layers(self.java_root / "config", context)
 
         if "data-jpa" in self.config['dependencies']:
             entity_context = {**context, "folder": "model"}
@@ -396,15 +480,8 @@ class ProjectGenerator:
         config_base = self.java_root / "config"
         config_base.mkdir(parents=True, exist_ok=True)
 
-        if self.config.get('use_jwt'):
-            self._create_security_layer(config_base, context)
-
-        if self.config.get('use_swagger'):
-            self._create_swagger_config(config_base, context)
-
-        if self.config.get('use_exception_handler'):
-            exception_base = self.java_root / "exception"
-            self._create_exception_handler(exception_base, context)
+        # Setup common layers (security, swagger, exception handler, DTOs)
+        self._setup_common_layers(config_base, context)
 
         base_package = self._get_package_for_path(base)
         feature_context = {**context, "package_name": base_package}
@@ -428,14 +505,8 @@ class ProjectGenerator:
         for folder in folders:
             (self.java_root / folder).mkdir(parents=True, exist_ok=True)
 
-        if self.config.get('use_jwt'):
-            self._create_security_layer(self.java_root / "infrastructure/config", context)
-
-        if self.config.get('use_swagger'):
-            self._create_swagger_config(self.java_root / "infrastructure/config", context)
-
-        if self.config.get('use_exception_handler'):
-            self._create_exception_handler(self.java_root / "infrastructure/exception", context)
+        # Setup common layers (security, swagger, exception handler, DTOs)
+        self._setup_common_layers(self.java_root / "infrastructure/config", context)
 
         base_package = self._extract_package_name()
 
@@ -461,14 +532,8 @@ class ProjectGenerator:
         for folder in folders:
             (self.java_root / folder).mkdir(parents=True, exist_ok=True)
 
-        if self.config.get('use_jwt'):
-            self._create_security_layer(self.java_root / "infrastructure/config", context)
-
-        if self.config.get('use_swagger'):
-            self._create_swagger_config(self.java_root / "infrastructure/config", context)
-
-        if self.config.get('use_exception_handler'):
-            self._create_exception_handler(self.java_root / "infrastructure/exception", context)
+        # Setup common layers (security, swagger, exception handler, DTOs)
+        self._setup_common_layers(self.java_root / "infrastructure/config", context)
 
         base_package = self._extract_package_name()
 
