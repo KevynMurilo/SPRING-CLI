@@ -5,12 +5,15 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from spring_cli.core import api, cache, generator
 from spring_cli.core.config import config_manager
+from spring_cli.core.i18n import t, get_i18n
+from spring_cli.core.presets import get_preset_manager
 from spring_cli.ui import menu
-from spring_cli.ui.banner import (
-    show_banner,
-    show_welcome_message,
-    show_success_banner,
-    show_error_banner
+from InquirerPy import inquirer
+from spring_cli.ui.banner_enhanced import (
+    show_enhanced_banner,
+    show_welcome_message_enhanced,
+    show_success_banner_enhanced,
+    show_error_banner_enhanced
 )
 
 console = Console()
@@ -20,28 +23,61 @@ PROJECT_TYPE = "maven-project"
 
 def main():
     console.clear()
-    show_banner()
-    show_welcome_message()
+
+    # Ask for language first
+    menu.ask_language()
+
+    show_enhanced_banner()
+    show_welcome_message_enhanced()
+
+    # Ask if user wants to use a preset
+    preset_key = menu.ask_use_preset()
 
     metadata = _load_metadata()
     if not metadata:
-        show_error_banner("Unable to fetch metadata from Spring Initializr")
-        console.print("[yellow]Tip:[/yellow] Check your internet connection\n")
+        show_error_banner_enhanced(t("errors.metadata_failed"))
+        console.print(f"[yellow]{t('errors.metadata_tip')}[/yellow]\n")
         return
 
     config = _initialize_config()
 
+    # Load preset if selected
+    if preset_key:
+        config = _load_preset_config(preset_key, config)
+
     try:
-        _collect_user_input(config, metadata)
+        _collect_user_input(config, metadata, skip_if_preset=bool(preset_key))
         _review_and_confirm(config, metadata)
         _generate_project(config)
     except KeyboardInterrupt:
-        console.print("\n[yellow]Operation cancelled by user.[/yellow]")
+        console.print(f"\n[yellow]{t('app.cancelled')}[/yellow]")
         sys.exit(0)
 
 
+def _load_preset_config(preset_key: str, base_config: dict) -> dict:
+    """Load configuration from preset"""
+    preset_manager = get_preset_manager()
+
+    if preset_key.startswith("builtin:"):
+        # Load built-in preset
+        preset_name = preset_key.split(":", 1)[1]
+        builtin_presets = preset_manager.get_builtin_presets()
+        if preset_name in builtin_presets:
+            preset_config = builtin_presets[preset_name]["config"]
+            base_config.update(preset_config)
+            console.print(f"[green]{t('presets.loaded')}[/green] {builtin_presets[preset_name]['name']}\n")
+    elif preset_key.startswith("user:"):
+        # Load user preset
+        preset_name = preset_key.split(":", 1)[1]
+        preset_config = preset_manager.load_preset(preset_name)
+        if preset_config:
+            base_config.update(preset_config)
+            console.print(f"[green]{t('presets.loaded')}[/green] {preset_name}\n")
+
+    return base_config
+
+
 def _load_metadata():
-    # Agora o Progress vai funcionar porque foi importado
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -82,15 +118,25 @@ def _initialize_config():
     }
 
 
-def _collect_user_input(config, metadata):
-    config['output_dir'] = menu.ask_directory(config.get('output_dir'))
+def _collect_user_input(config, metadata, skip_if_preset=False):
+    # If using preset and dependencies are set, skip dependency selection
+    if not skip_if_preset or not config.get('dependencies'):
+        config['output_dir'] = menu.ask_directory(config.get('output_dir'))
 
-    details = menu.ask_project_details(metadata, defaults=config)
-    config.update(details)
+        details = menu.ask_project_details(metadata, defaults=config)
+        config.update(details)
 
-    dependencies, config_flags = menu.ask_dependencies_flow(metadata)
-    config['dependencies'] = dependencies
-    config.update(config_flags)
+        dependencies, config_flags = menu.ask_dependencies_flow(metadata)
+        config['dependencies'] = dependencies
+        config.update(config_flags)
+    else:
+        # Just ask for output dir and artifact
+        config['output_dir'] = menu.ask_directory(config.get('output_dir'))
+        artifact = inquirer.text(
+            message=t("menu.artifact_id"),
+            default=config.get('artifactId', 'demo')
+        ).execute()
+        config['artifactId'] = artifact
 
 
 def _review_and_confirm(config, metadata):
@@ -109,10 +155,13 @@ def _review_and_confirm(config, metadata):
             new_details = menu.ask_project_details(metadata, defaults=config)
             config.update(new_details)
         elif action == "edit_dir":
-            config['output_dir'] = menu.ask_directory() 
+            config['output_dir'] = menu.ask_directory()
+        elif action == "save_preset":
+            menu.save_configuration_as_preset(config)
+            continue  # Don't clear screen, just show menu again
 
         console.clear()
-        show_banner()
+        show_enhanced_banner()
 
 
 def _generate_project(config):
@@ -143,7 +192,7 @@ def _generate_project(config):
     console.print("[cyan]→[/cyan] Downloading project from Spring Initializr...")
 
     if not api.download_project(config, str(zip_name)):
-        show_error_banner("Failed to download project")
+        show_error_banner_enhanced(t("errors.download_failed"))
         return
 
     console.print("[green]✓[/green] Download complete")
@@ -153,13 +202,13 @@ def _generate_project(config):
     project_generator = generator.ProjectGenerator(str(zip_name), config)
 
     if not project_generator.execute():
-        show_error_banner("Failed to generate project")
+        show_error_banner_enhanced(t("errors.generation_failed"))
         return
 
-    console.print("[green]✓[/green] Project generated successfully")
+    console.print(f"[green]✓[/green] {t('app.success')}")
 
     final_path = Path(config['output_dir']).resolve() / config['artifactId']
-    show_success_banner(config['artifactId'], str(final_path))
+    show_success_banner_enhanced(config['artifactId'], str(final_path))
 
     _show_next_steps(config, final_path)
 
