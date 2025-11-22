@@ -71,6 +71,10 @@ def _initialize_config():
         "use_jwt": False,
         "use_swagger": False,
         "use_exception_handler": False,
+        "use_cors": False,
+        "use_mapstruct": False,
+        "use_cicd": False,
+        "use_k8s": False,
         "groupId": defaults.get("groupId", "com.example"),
         "javaVersion": defaults.get("javaVersion", "17"),
         "packaging": defaults.get("packaging", "jar"),
@@ -170,6 +174,14 @@ def _show_next_steps(config, final_path):
         features.append("Swagger")
     if config.get('use_exception_handler'):
         features.append("Exception Handler")
+    if config.get('use_cors'):
+        features.append("CORS")
+    if config.get('use_mapstruct'):
+        features.append("MapStruct")
+    if config.get('use_cicd'):
+        features.append("CI/CD")
+    if config.get('use_k8s'):
+        features.append("K8s")
 
     if features:
         architecture += " + " + " + ".join(features)

@@ -123,9 +123,31 @@ def ask_dependencies_flow(
         ).execute()
 
         config_flags["use_exception_handler"] = inquirer.confirm(
-            message="Add Global Exception Handler?",
+            message="Add Global Exception Handler with ApiResponseDTO?",
             default=True
         ).execute()
+
+        config_flags["use_cors"] = inquirer.confirm(
+            message="Configure CORS (Cross-Origin Resource Sharing)?",
+            default=True
+        ).execute()
+
+    if "data-jpa" in selected or "data-mongodb" in selected:
+        config_flags["use_mapstruct"] = inquirer.confirm(
+            message="Add MapStruct for entity-DTO mapping?",
+            default=True
+        ).execute()
+
+    # Ask about DevOps tools
+    config_flags["use_cicd"] = inquirer.confirm(
+        message="Generate CI/CD pipeline (GitHub Actions)?",
+        default=False
+    ).execute()
+
+    config_flags["use_k8s"] = inquirer.confirm(
+        message="Generate Kubernetes manifests?",
+        default=False
+    ).execute()
 
     return dependencies_string, config_flags
 
@@ -149,6 +171,18 @@ def review_configuration(config: Dict[str, Any]) -> str:
 
     exception_status = "[green]YES[/green]" if config.get('use_exception_handler') else "[dim]No[/dim]"
     rprint(f"  [cyan]Exception Handler:[/cyan] {exception_status}")
+
+    cors_status = "[green]YES[/green]" if config.get('use_cors') else "[dim]No[/dim]"
+    rprint(f"  [cyan]CORS Config:[/cyan] {cors_status}")
+
+    mapstruct_status = "[green]YES[/green]" if config.get('use_mapstruct') else "[dim]No[/dim]"
+    rprint(f"  [cyan]MapStruct:[/cyan] {mapstruct_status}")
+
+    cicd_status = "[green]YES[/green]" if config.get('use_cicd') else "[dim]No[/dim]"
+    rprint(f"  [cyan]CI/CD Pipeline:[/cyan] {cicd_status}")
+
+    k8s_status = "[green]YES[/green]" if config.get('use_k8s') else "[dim]No[/dim]"
+    rprint(f"  [cyan]Kubernetes:[/cyan] {k8s_status}")
 
     deps_display = config['dependencies'] if config['dependencies'] else 'None'
     rprint(f"  [cyan]Dependencies:[/cyan] [green]{deps_display}[/green]")
