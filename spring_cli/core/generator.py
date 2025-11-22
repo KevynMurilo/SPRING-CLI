@@ -430,12 +430,24 @@ tasks.named('bootRun') {{
 
         if structure == 'mvc':
             self._create_mvc_structure(context)
+        elif structure == 'layered':
+            self._create_layered_structure(context)
         elif structure == 'feature':
             self._create_feature_structure(context)
         elif structure == 'clean':
             self._create_clean_structure(context)
         elif structure == 'hexagonal':
             self._create_hexagonal_structure(context)
+        elif structure == 'onion':
+            self._create_onion_structure(context)
+        elif structure == 'ddd':
+            self._create_ddd_structure(context)
+        elif structure == 'cqrs':
+            self._create_cqrs_structure(context)
+        elif structure == 'event-driven':
+            self._create_event_driven_structure(context)
+        elif structure == 'vertical-slice':
+            self._create_vertical_slice_structure(context)
 
     def _extract_package_name(self) -> str:
         return str(self.java_root).replace(os.sep, ".").split("src.main.java.")[-1]
@@ -567,23 +579,35 @@ tasks.named('bootRun') {{
     def _get_model_path_for_architecture(self) -> Path:
         """Get model/entity path based on architecture"""
         structure = self.config.get('structure', 'mvc')
-        if structure == 'mvc':
+        if structure in ['mvc', 'layered']:
             return self.java_root / "model"
         elif structure == 'feature':
             return self.java_root / "features/demo/model"
-        elif structure in ['clean', 'hexagonal']:
+        elif structure in ['clean', 'hexagonal', 'onion', 'ddd']:
             return self.java_root / "domain/model"
+        elif structure == 'cqrs':
+            return self.java_root / "domain/model"
+        elif structure == 'event-driven':
+            return self.java_root / "domain/model"
+        elif structure == 'vertical-slice':
+            return self.java_root / "features/demo/domain"
         return self.java_root / "model"
 
     def _get_mapper_path_for_architecture(self) -> Path:
         """Get mapper path based on architecture"""
         structure = self.config.get('structure', 'mvc')
-        if structure == 'mvc':
+        if structure in ['mvc', 'layered']:
             return self.java_root / "mapper"
         elif structure == 'feature':
             return self.java_root / "features/demo/mapper"
-        elif structure in ['clean', 'hexagonal']:
+        elif structure in ['clean', 'hexagonal', 'onion', 'ddd']:
             return self.java_root / "application/mapper"
+        elif structure == 'cqrs':
+            return self.java_root / "application/mapper"
+        elif structure == 'event-driven':
+            return self.java_root / "application/mapper"
+        elif structure == 'vertical-slice':
+            return self.java_root / "features/demo/application"
         return self.java_root / "mapper"
 
     def _create_mvc_structure(self, context: Dict[str, Any]):
@@ -689,6 +713,175 @@ tasks.named('bootRun') {{
 
         for folder, filename, template in artifacts:
             target_dir = self.java_root / folder
+            pkg_name = self._get_package_for_path(target_dir)
+            ctx = {**context, "package_name": pkg_name, "base_package": base_package}
+            self._write_java_file(target_dir, filename, template, ctx)
+
+    def _create_layered_structure(self, context: Dict[str, Any]):
+        """Traditional Layered Architecture (Presentation/Business/Persistence/Database)"""
+        folders = ['presentation/controller', 'presentation/dto', 'business/service', 'business/validator',
+                   'persistence/repository', 'persistence/entity', 'database/config']
+        for folder in folders:
+            (self.java_root / folder).mkdir(parents=True, exist_ok=True)
+
+        self._setup_common_layers(self.java_root / "database/config", context)
+
+        if "data-jpa" in self.config['dependencies']:
+            entity_context = {**context, "folder": "entity"}
+            self._write_java_file(self.java_root / "persistence/entity", "Demo", "Entity.java.jinja2", entity_context)
+
+        artifacts = [
+            ("presentation/controller", "DemoController", "Controller.java.jinja2"),
+            ("business/service", "DemoService", "Service.java.jinja2"),
+            ("persistence/repository", "DemoRepository", "Repository.java.jinja2")
+        ]
+
+        for folder, filename, template in artifacts:
+            target_dir = self.java_root / folder
+            self._write_java_file(target_dir, filename, template, context)
+
+    def _create_onion_structure(self, context: Dict[str, Any]):
+        """Onion Architecture (Core/Domain Services/Application Services/Infrastructure)"""
+        folders = ['domain/model', 'domain/services', 'application/services', 'application/interfaces',
+                   'infrastructure/persistence', 'infrastructure/web', 'infrastructure/config']
+        for folder in folders:
+            (self.java_root / folder).mkdir(parents=True, exist_ok=True)
+
+        self._setup_common_layers(self.java_root / "infrastructure/config", context)
+
+        base_package = self._extract_package_name()
+
+        if "data-jpa" in self.config['dependencies']:
+            entity_context = {**context, "folder": "model"}
+            self._write_java_file(self.java_root / "domain/model", "Demo", "Entity.java.jinja2", entity_context)
+
+        artifacts = [
+            ("application/interfaces", "IDemoService", "PortIn.java.jinja2"),
+            ("application/services", "DemoApplicationService", "ApplicationService.java.jinja2"),
+            ("infrastructure/web", "DemoController", "InfraController.java.jinja2"),
+            ("infrastructure/persistence", "DemoRepositoryImpl", "InfraRepository.java.jinja2")
+        ]
+
+        for folder, filename, template in artifacts:
+            target_dir = self.java_root / folder
+            pkg_name = self._get_package_for_path(target_dir)
+            ctx = {**context, "package_name": pkg_name, "base_package": base_package}
+            self._write_java_file(target_dir, filename, template, ctx)
+
+    def _create_ddd_structure(self, context: Dict[str, Any]):
+        """Domain-Driven Design (Aggregates/Entities/Value Objects/Services/Repositories)"""
+        folders = ['domain/model/aggregates', 'domain/model/entities', 'domain/model/valueobjects',
+                   'domain/services', 'domain/repositories', 'application/services',
+                   'infrastructure/persistence', 'infrastructure/web', 'infrastructure/config']
+        for folder in folders:
+            (self.java_root / folder).mkdir(parents=True, exist_ok=True)
+
+        self._setup_common_layers(self.java_root / "infrastructure/config", context)
+
+        base_package = self._extract_package_name()
+
+        if "data-jpa" in self.config['dependencies']:
+            entity_context = {**context, "folder": "aggregates"}
+            self._write_java_file(self.java_root / "domain/model/aggregates", "DemoAggregate", "Entity.java.jinja2", entity_context)
+
+        artifacts = [
+            ("domain/repositories", "IDemoRepository", "PortOut.java.jinja2"),
+            ("application/services", "DemoApplicationService", "ApplicationService.java.jinja2"),
+            ("infrastructure/web", "DemoController", "InfraController.java.jinja2"),
+            ("infrastructure/persistence", "DemoRepositoryImpl", "InfraRepository.java.jinja2")
+        ]
+
+        for folder, filename, template in artifacts:
+            target_dir = self.java_root / folder
+            pkg_name = self._get_package_for_path(target_dir)
+            ctx = {**context, "package_name": pkg_name, "base_package": base_package}
+            self._write_java_file(target_dir, filename, template, ctx)
+
+    def _create_cqrs_structure(self, context: Dict[str, Any]):
+        """CQRS Pattern (Commands/Queries/Handlers)"""
+        folders = ['domain/model', 'application/commands', 'application/queries',
+                   'application/handlers/command', 'application/handlers/query',
+                   'infrastructure/persistence', 'infrastructure/web', 'infrastructure/config']
+        for folder in folders:
+            (self.java_root / folder).mkdir(parents=True, exist_ok=True)
+
+        self._setup_common_layers(self.java_root / "infrastructure/config", context)
+
+        base_package = self._extract_package_name()
+
+        if "data-jpa" in self.config['dependencies']:
+            entity_context = {**context, "folder": "model"}
+            self._write_java_file(self.java_root / "domain/model", "Demo", "Entity.java.jinja2", entity_context)
+
+        artifacts = [
+            ("infrastructure/web", "DemoController", "InfraController.java.jinja2"),
+            ("infrastructure/persistence", "DemoRepositoryImpl", "InfraRepository.java.jinja2"),
+            ("application/handlers/command", "CreateDemoHandler", "ApplicationService.java.jinja2"),
+            ("application/handlers/query", "GetDemoHandler", "UseCase.java.jinja2")
+        ]
+
+        for folder, filename, template in artifacts:
+            target_dir = self.java_root / folder
+            pkg_name = self._get_package_for_path(target_dir)
+            ctx = {**context, "package_name": pkg_name, "base_package": base_package}
+            self._write_java_file(target_dir, filename, template, ctx)
+
+    def _create_event_driven_structure(self, context: Dict[str, Any]):
+        """Event-Driven Architecture (Events/Handlers/Publishers/Listeners)"""
+        folders = ['domain/model', 'domain/events', 'application/services', 'application/eventhandlers',
+                   'infrastructure/messaging/publishers', 'infrastructure/messaging/listeners',
+                   'infrastructure/web', 'infrastructure/persistence', 'infrastructure/config']
+        for folder in folders:
+            (self.java_root / folder).mkdir(parents=True, exist_ok=True)
+
+        self._setup_common_layers(self.java_root / "infrastructure/config", context)
+
+        base_package = self._extract_package_name()
+
+        if "data-jpa" in self.config['dependencies']:
+            entity_context = {**context, "folder": "model"}
+            self._write_java_file(self.java_root / "domain/model", "Demo", "Entity.java.jinja2", entity_context)
+
+        artifacts = [
+            ("application/services", "DemoService", "ApplicationService.java.jinja2"),
+            ("infrastructure/web", "DemoController", "InfraController.java.jinja2"),
+            ("infrastructure/persistence", "DemoRepositoryImpl", "InfraRepository.java.jinja2")
+        ]
+
+        for folder, filename, template in artifacts:
+            target_dir = self.java_root / folder
+            pkg_name = self._get_package_for_path(target_dir)
+            ctx = {**context, "package_name": pkg_name, "base_package": base_package}
+            self._write_java_file(target_dir, filename, template, ctx)
+
+    def _create_vertical_slice_structure(self, context: Dict[str, Any]):
+        """Vertical Slice Architecture (Features with full stack)"""
+        base = self.java_root / "features/demo"
+        folders = ['domain', 'application', 'infrastructure/web', 'infrastructure/persistence']
+
+        for folder in folders:
+            (base / folder).mkdir(parents=True, exist_ok=True)
+
+        config_base = self.java_root / "config"
+        config_base.mkdir(parents=True, exist_ok=True)
+
+        self._setup_common_layers(config_base, context)
+
+        base_package = self._get_package_for_path(base)
+        feature_context = {**context, "package_name": base_package}
+
+        if "data-jpa" in self.config['dependencies']:
+            entity_context = {**feature_context, "folder": "domain"}
+            self._write_java_file(base / "domain", "Demo", "Entity.java.jinja2", entity_context)
+
+        artifacts = [
+            ("application", "DemoService", "ApplicationService.java.jinja2"),
+            ("infrastructure/web", "DemoController", "AdapterIn.java.jinja2"),
+            ("infrastructure/persistence", "DemoRepository", "AdapterOut.java.jinja2")
+        ]
+
+        for folder, filename, template in artifacts:
+            target_dir = base / folder
             pkg_name = self._get_package_for_path(target_dir)
             ctx = {**context, "package_name": pkg_name, "base_package": base_package}
             self._write_java_file(target_dir, filename, template, ctx)

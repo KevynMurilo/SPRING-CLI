@@ -64,9 +64,15 @@ class I18n:
             "structure": {
                 "none": "Default Spring (Empty)",
                 "mvc": "MVC (controller/service/repository/model)",
-                "feature": "Feature/Domain Driven",
+                "layered": "Layered (presentation/business/persistence/database)",
+                "feature": "Feature-Based (organized by business features)",
                 "clean": "Clean Architecture (domain/application/infrastructure)",
-                "hexagonal": "Hexagonal (domain/application/ports/adapters)"
+                "hexagonal": "Hexagonal/Ports & Adapters (domain/ports/adapters)",
+                "onion": "Onion Architecture (core/services/infrastructure)",
+                "ddd": "DDD (aggregates/entities/value-objects/services)",
+                "cqrs": "CQRS (commands/queries/handlers)",
+                "event-driven": "Event-Driven (events/handlers/publishers)",
+                "vertical-slice": "Vertical Slice (features with full stack)"
             },
             "prompts": {
                 "jwt": "Spring Security detected. Configure JWT scaffolding?",
@@ -166,9 +172,15 @@ class I18n:
             "structure": {
                 "none": "Spring Padrão (Vazio)",
                 "mvc": "MVC (controller/service/repository/model)",
-                "feature": "Baseado em Features/Domínio",
+                "layered": "Em Camadas (presentation/business/persistence/database)",
+                "feature": "Baseado em Features (organizado por funcionalidades)",
                 "clean": "Clean Architecture (domain/application/infrastructure)",
-                "hexagonal": "Hexagonal (domain/application/ports/adapters)"
+                "hexagonal": "Hexagonal/Portas & Adaptadores (domain/ports/adapters)",
+                "onion": "Onion Architecture (core/services/infrastructure)",
+                "ddd": "DDD (aggregates/entities/value-objects/services)",
+                "cqrs": "CQRS (commands/queries/handlers)",
+                "event-driven": "Orientado a Eventos (events/handlers/publishers)",
+                "vertical-slice": "Vertical Slice (features com stack completo)"
             },
             "prompts": {
                 "jwt": "Spring Security detectado. Configurar scaffolding JWT?",
