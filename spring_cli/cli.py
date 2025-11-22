@@ -23,12 +23,13 @@ def create_parser():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  spring-cli                    # Interactive mode (default)
-  spring-cli --version          # Show version
-  spring-cli --clear-cache      # Clear cached metadata
-  spring-cli --config           # Show current configuration
-  spring-cli --reset-config     # Reset configuration to defaults
-  spring-cli --info             # Show system information
+  spring-cli                      # Interactive mode (default)
+  spring-cli --lang pt            # Set language to Portuguese
+  spring-cli --version            # Show version
+  spring-cli --clear-cache        # Clear cached metadata
+  spring-cli --list-presets       # List available presets
+  spring-cli --delete-preset NAME # Delete a preset
+  spring-cli --info               # Show system information
 
 For more information, visit: https://github.com/yourusername/spring-cli
         """
@@ -41,9 +42,29 @@ For more information, visit: https://github.com/yourusername/spring-cli
     )
 
     parser.add_argument(
+        '--lang', '--language',
+        type=str,
+        choices=['en', 'pt'],
+        help='Set CLI language (en=English, pt=Portuguese)'
+    )
+
+    parser.add_argument(
         '--clear-cache',
         action='store_true',
         help='Clear cached Spring Initializr metadata'
+    )
+
+    parser.add_argument(
+        '--list-presets',
+        action='store_true',
+        help='List all available project presets'
+    )
+
+    parser.add_argument(
+        '--delete-preset',
+        type=str,
+        metavar='NAME',
+        help='Delete a user preset'
     )
 
     parser.add_argument(
@@ -160,12 +181,77 @@ def run_interactive():
     interactive_main()
 
 
+def list_presets():
+    from spring_cli.core.presets import get_preset_manager
+    from rich.table import Table
+    from rich import box
+
+    preset_manager = get_preset_manager()
+
+    console.print("\n[bold cyan]Available Presets[/bold cyan]\n")
+
+    # Built-in presets
+    builtin_presets = preset_manager.get_builtin_presets()
+    if builtin_presets:
+        table = Table(box=box.ROUNDED, show_header=True, header_style="bold magenta")
+        table.add_column("Name", style="cyan", no_wrap=True)
+        table.add_column("Description", style="white")
+
+        console.print("[bold yellow]Built-in Presets:[/bold yellow]")
+        for key, preset in builtin_presets.items():
+            table.add_row(preset['name'], preset['description'])
+
+        console.print(table)
+        console.print()
+
+    # User presets
+    user_presets = preset_manager.list_presets()
+    if user_presets:
+        table = Table(box=box.ROUNDED, show_header=True, header_style="bold magenta")
+        table.add_column("Name", style="green", no_wrap=True)
+        table.add_column("Description", style="white")
+
+        console.print("[bold yellow]Your Presets:[/bold yellow]")
+        for preset in user_presets:
+            table.add_row(preset['name'], preset['description'])
+
+        console.print(table)
+        console.print()
+
+    if not builtin_presets and not user_presets:
+        console.print("[yellow]No presets available.[/yellow]\n")
+
+
+def delete_preset(name: str):
+    from spring_cli.core.presets import get_preset_manager
+
+    preset_manager = get_preset_manager()
+
+    if preset_manager.delete_preset(name):
+        console.print(f"[green]✓[/green] Preset '{name}' deleted successfully\n")
+    else:
+        console.print(f"[red]✗[/red] Preset '{name}' not found\n")
+
+
 def main():
     parser = create_parser()
     args = parser.parse_args()
 
+    # Set language if specified
+    if args.lang:
+        from spring_cli.core.i18n import get_i18n
+        get_i18n().set_language(args.lang)
+
     if args.clear_cache:
         clear_cache()
+        return 0
+
+    if args.list_presets:
+        list_presets()
+        return 0
+
+    if args.delete_preset:
+        delete_preset(args.delete_preset)
         return 0
 
     if args.config:
