@@ -69,6 +69,8 @@ def _initialize_config():
         "output_dir": defaults.get("output_dir", "."),
         "type": PROJECT_TYPE,
         "use_jwt": False,
+        "use_swagger": False,
+        "use_exception_handler": False,
         "groupId": defaults.get("groupId", "com.example"),
         "javaVersion": defaults.get("javaVersion", "17"),
         "packaging": defaults.get("packaging", "jar"),
@@ -82,9 +84,9 @@ def _collect_user_input(config, metadata):
     details = menu.ask_project_details(metadata, defaults=config)
     config.update(details)
 
-    dependencies, use_jwt = menu.ask_dependencies_flow(metadata)
+    dependencies, config_flags = menu.ask_dependencies_flow(metadata)
     config['dependencies'] = dependencies
-    config['use_jwt'] = use_jwt
+    config.update(config_flags)
 
 
 def _review_and_confirm(config, metadata):
@@ -96,9 +98,9 @@ def _review_and_confirm(config, metadata):
         elif action == "exit":
             sys.exit(0)
         elif action == "edit_deps":
-            dependencies, use_jwt = menu.ask_dependencies_flow(metadata)
+            dependencies, config_flags = menu.ask_dependencies_flow(metadata)
             config['dependencies'] = dependencies
-            config['use_jwt'] = use_jwt
+            config.update(config_flags)
         elif action == "edit_details":
             new_details = menu.ask_project_details(metadata, defaults=config)
             config.update(new_details)
@@ -160,8 +162,17 @@ def _generate_project(config):
 
 def _show_next_steps(config, final_path):
     architecture = config['structure'].upper()
-    if config['use_jwt']:
-        architecture += " + JWT"
+    features = []
+
+    if config.get('use_jwt'):
+        features.append("JWT")
+    if config.get('use_swagger'):
+        features.append("Swagger")
+    if config.get('use_exception_handler'):
+        features.append("Exception Handler")
+
+    if features:
+        architecture += " + " + " + ".join(features)
 
     console.print("[bold cyan]>> Next Steps:[/bold cyan]")
     console.print()
@@ -177,11 +188,16 @@ def _show_next_steps(config, final_path):
 
     if "web" in config.get('dependencies', ''):
         console.print("  [cyan]API Demo:[/cyan]     http://localhost:8080/api/demo")
+
+    if config.get('use_swagger'):
         console.print("  [cyan]Swagger UI:[/cyan]   http://localhost:8080/swagger-ui.html")
 
     if "actuator" in config.get('dependencies', ''):
         console.print("  [cyan]Health:[/cyan]       http://localhost:8080/actuator/health")
         console.print("  [cyan]Metrics:[/cyan]      http://localhost:8080/actuator/metrics")
+
+    if "h2" in config.get('dependencies', ''):
+        console.print("  [cyan]H2 Console:[/cyan]   http://localhost:8080/h2-console")
 
     console.print()
     console.print(f"[bold yellow]>> Pro Tip:[/bold yellow]")

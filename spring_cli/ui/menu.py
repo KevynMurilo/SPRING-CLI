@@ -91,7 +91,7 @@ def ask_project_details(metadata: Dict[str, Any], defaults: Optional[Dict[str, A
 def ask_dependencies_flow(
     metadata: Dict[str, Any],
     current_config: Optional[Dict[str, Any]] = None
-) -> Tuple[str, bool]:
+) -> Tuple[str, Dict[str, bool]]:
     rprint("\n[yellow]--- Dependency Selection ---[/yellow]")
 
     selected = inquirer.fuzzy(
@@ -104,23 +104,38 @@ def ask_dependencies_flow(
     ).execute()
 
     dependencies_string = ",".join(selected)
-    use_jwt = False
+    config_flags = {
+        "use_jwt": False,
+        "use_swagger": False,
+        "use_exception_handler": False
+    }
 
     if "security" in selected:
-        use_jwt = inquirer.confirm(
+        config_flags["use_jwt"] = inquirer.confirm(
             message="Spring Security detected. Configure JWT scaffolding?",
             default=True
         ).execute()
 
-    return dependencies_string, use_jwt
+    if "web" in selected:
+        config_flags["use_swagger"] = inquirer.confirm(
+            message="Web dependency detected. Add Swagger/OpenAPI documentation?",
+            default=True
+        ).execute()
+
+        config_flags["use_exception_handler"] = inquirer.confirm(
+            message="Add Global Exception Handler?",
+            default=True
+        ).execute()
+
+    return dependencies_string, config_flags
 
 
 def review_configuration(config: Dict[str, Any]) -> str:
     rprint("\n[bold cyan]=== Configuration Summary ===[/bold cyan]\n")
-    
+
     # Mostra um texto amigável se for a pasta atual
     path_display = "(Current Folder)" if config['output_dir'] == "." else config['output_dir']
-    
+
     rprint(f"  [cyan]Destination:[/cyan]  {path_display}/{config['artifactId']}/")
     rprint(f"  [cyan]Artifact:[/cyan]     {config['artifactId']}")
     rprint(f"  [cyan]Stack:[/cyan]        Java {config['javaVersion']} + Boot {config['bootVersion']}")
@@ -128,6 +143,12 @@ def review_configuration(config: Dict[str, Any]) -> str:
 
     jwt_status = "[green]YES[/green]" if config.get('use_jwt') else "[dim]No[/dim]"
     rprint(f"  [cyan]JWT Security:[/cyan] {jwt_status}")
+
+    swagger_status = "[green]YES[/green]" if config.get('use_swagger') else "[dim]No[/dim]"
+    rprint(f"  [cyan]Swagger/OpenAPI:[/cyan] {swagger_status}")
+
+    exception_status = "[green]YES[/green]" if config.get('use_exception_handler') else "[dim]No[/dim]"
+    rprint(f"  [cyan]Exception Handler:[/cyan] {exception_status}")
 
     deps_display = config['dependencies'] if config['dependencies'] else 'None'
     rprint(f"  [cyan]Dependencies:[/cyan] [green]{deps_display}[/green]")
