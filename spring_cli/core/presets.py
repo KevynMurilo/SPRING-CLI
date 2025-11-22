@@ -97,6 +97,7 @@ class PresetManager:
                 "config": {
                     "structure": "clean",
                     "javaVersion": "17",
+                    "bootVersion": "3.2.0",
                     "packaging": "jar",
                     "dependencies": "web,data-jpa,postgresql,security,actuator,validation",
                     "use_jwt": True,
@@ -114,6 +115,7 @@ class PresetManager:
                 "config": {
                     "structure": "hexagonal",
                     "javaVersion": "17",
+                    "bootVersion": "3.2.0",
                     "packaging": "jar",
                     "dependencies": "web,data-jpa,postgresql,actuator,cloud-eureka,cloud-config-client",
                     "use_jwt": True,
@@ -131,6 +133,7 @@ class PresetManager:
                 "config": {
                     "structure": "mvc",
                     "javaVersion": "17",
+                    "bootVersion": "3.2.0",
                     "packaging": "war",
                     "dependencies": "web,data-jpa,mysql,security,thymeleaf,validation",
                     "use_jwt": False,
@@ -148,6 +151,7 @@ class PresetManager:
                 "config": {
                     "structure": "mvc",
                     "javaVersion": "17",
+                    "bootVersion": "3.2.0",
                     "packaging": "jar",
                     "dependencies": "web",
                     "use_jwt": False,
@@ -157,6 +161,78 @@ class PresetManager:
                     "use_mapstruct": False,
                     "use_cicd": False,
                     "use_k8s": False
+                }
+            },
+            "ddd-api": {
+                "name": "DDD API",
+                "description": "Domain-Driven Design with aggregates and bounded contexts",
+                "config": {
+                    "structure": "ddd",
+                    "javaVersion": "17",
+                    "bootVersion": "3.2.0",
+                    "packaging": "jar",
+                    "dependencies": "web,data-jpa,postgresql,security,actuator,validation",
+                    "use_jwt": True,
+                    "use_swagger": True,
+                    "use_exception_handler": True,
+                    "use_cors": True,
+                    "use_mapstruct": True,
+                    "use_cicd": False,
+                    "use_k8s": False
+                }
+            },
+            "enterprise-layered": {
+                "name": "Enterprise Layered",
+                "description": "Traditional enterprise layered architecture",
+                "config": {
+                    "structure": "layered",
+                    "javaVersion": "17",
+                    "bootVersion": "3.2.0",
+                    "packaging": "war",
+                    "dependencies": "web,data-jpa,mysql,security,actuator,validation",
+                    "use_jwt": False,
+                    "use_swagger": True,
+                    "use_exception_handler": True,
+                    "use_cors": True,
+                    "use_mapstruct": True,
+                    "use_cicd": False,
+                    "use_k8s": False
+                }
+            },
+            "cqrs-service": {
+                "name": "CQRS Service",
+                "description": "CQRS pattern with separate command and query models",
+                "config": {
+                    "structure": "cqrs",
+                    "javaVersion": "17",
+                    "bootVersion": "3.2.0",
+                    "packaging": "jar",
+                    "dependencies": "web,data-jpa,postgresql,actuator,validation",
+                    "use_jwt": True,
+                    "use_swagger": True,
+                    "use_exception_handler": True,
+                    "use_cors": True,
+                    "use_mapstruct": True,
+                    "use_cicd": True,
+                    "use_k8s": True
+                }
+            },
+            "event-driven": {
+                "name": "Event-Driven",
+                "description": "Event-driven architecture with message handlers",
+                "config": {
+                    "structure": "event-driven",
+                    "javaVersion": "17",
+                    "bootVersion": "3.2.0",
+                    "packaging": "jar",
+                    "dependencies": "web,data-jpa,postgresql,kafka,actuator",
+                    "use_jwt": True,
+                    "use_swagger": True,
+                    "use_exception_handler": True,
+                    "use_cors": True,
+                    "use_mapstruct": True,
+                    "use_cicd": True,
+                    "use_k8s": True
                 }
             }
         }
