@@ -243,8 +243,8 @@ def review_configuration(config: Dict[str, Any]) -> str:
 
     rprint(f"  [cyan]{t('review.destination')}[/cyan]  {path_display}/{config['artifactId']}/")
     rprint(f"  [cyan]{t('review.artifact')}[/cyan]     {config['artifactId']}")
-    rprint(f"  [cyan]{t('review.stack')}[/cyan]        Java {config['javaVersion']} + Boot {config['bootVersion']}")
-    rprint(f"  [cyan]{t('review.structure')}[/cyan]    {config['structure'].upper()}")
+    rprint(f"  [cyan]{t('review.stack')}[/cyan]        Java {config.get('javaVersion', '17')} + Boot {config.get('bootVersion', 'Latest')}")
+    rprint(f"  [cyan]{t('review.structure')}[/cyan]    {config.get('structure', 'mvc').upper()}")
 
     def status(flag): return f"[green]{t('review.yes')}[/green]" if flag else f"[dim]{t('review.no')}[/dim]"
 

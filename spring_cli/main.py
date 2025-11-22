@@ -46,7 +46,7 @@ def main():
         config = _load_preset_config(preset_key, config)
 
     try:
-        _collect_user_input(config, metadata, skip_if_preset=bool(preset_key))
+        _collect_user_input(config, metadata)
         _review_and_confirm(config, metadata)
         _generate_project(config)
     except KeyboardInterrupt:
@@ -118,25 +118,15 @@ def _initialize_config():
     }
 
 
-def _collect_user_input(config, metadata, skip_if_preset=False):
-    # If using preset and dependencies are set, skip dependency selection
-    if not skip_if_preset or not config.get('dependencies'):
-        config['output_dir'] = menu.ask_directory(config.get('output_dir'))
+def _collect_user_input(config, metadata):
+    config['output_dir'] = menu.ask_directory(config.get('output_dir'))
 
-        details = menu.ask_project_details(metadata, defaults=config)
-        config.update(details)
+    details = menu.ask_project_details(metadata, defaults=config)
+    config.update(details)
 
-        dependencies, config_flags = menu.ask_dependencies_flow(metadata)
-        config['dependencies'] = dependencies
-        config.update(config_flags)
-    else:
-        # Just ask for output dir and artifact
-        config['output_dir'] = menu.ask_directory(config.get('output_dir'))
-        artifact = inquirer.text(
-            message=t("menu.artifact_id"),
-            default=config.get('artifactId', 'demo')
-        ).execute()
-        config['artifactId'] = artifact
+    dependencies, config_flags = menu.ask_dependencies_flow(metadata)
+    config['dependencies'] = dependencies
+    config.update(config_flags)
 
 
 def _review_and_confirm(config, metadata):

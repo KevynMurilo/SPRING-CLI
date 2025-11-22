@@ -97,7 +97,6 @@ class PresetManager:
                 "config": {
                     "structure": "clean",
                     "javaVersion": "17",
-                    "bootVersion": "3.2.0",
                     "packaging": "jar",
                     "dependencies": "web,data-jpa,postgresql,security,actuator,validation",
                     "use_jwt": True,
@@ -115,7 +114,6 @@ class PresetManager:
                 "config": {
                     "structure": "hexagonal",
                     "javaVersion": "17",
-                    "bootVersion": "3.2.0",
                     "packaging": "jar",
                     "dependencies": "web,data-jpa,postgresql,actuator,cloud-eureka,cloud-config-client",
                     "use_jwt": True,
@@ -133,7 +131,6 @@ class PresetManager:
                 "config": {
                     "structure": "mvc",
                     "javaVersion": "17",
-                    "bootVersion": "3.2.0",
                     "packaging": "war",
                     "dependencies": "web,data-jpa,mysql,security,thymeleaf,validation",
                     "use_jwt": False,
@@ -151,7 +148,6 @@ class PresetManager:
                 "config": {
                     "structure": "mvc",
                     "javaVersion": "17",
-                    "bootVersion": "3.2.0",
                     "packaging": "jar",
                     "dependencies": "web",
                     "use_jwt": False,
@@ -169,7 +165,6 @@ class PresetManager:
                 "config": {
                     "structure": "ddd",
                     "javaVersion": "17",
-                    "bootVersion": "3.2.0",
                     "packaging": "jar",
                     "dependencies": "web,data-jpa,postgresql,security,actuator,validation",
                     "use_jwt": True,
@@ -187,7 +182,6 @@ class PresetManager:
                 "config": {
                     "structure": "layered",
                     "javaVersion": "17",
-                    "bootVersion": "3.2.0",
                     "packaging": "war",
                     "dependencies": "web,data-jpa,mysql,security,actuator,validation",
                     "use_jwt": False,
@@ -205,7 +199,6 @@ class PresetManager:
                 "config": {
                     "structure": "cqrs",
                     "javaVersion": "17",
-                    "bootVersion": "3.2.0",
                     "packaging": "jar",
                     "dependencies": "web,data-jpa,postgresql,actuator,validation",
                     "use_jwt": True,
@@ -223,7 +216,6 @@ class PresetManager:
                 "config": {
                     "structure": "event-driven",
                     "javaVersion": "17",
-                    "bootVersion": "3.2.0",
                     "packaging": "jar",
                     "dependencies": "web,data-jpa,postgresql,kafka,actuator",
                     "use_jwt": True,
