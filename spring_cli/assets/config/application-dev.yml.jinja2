@@ -1,0 +1,19 @@
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  error:
+    include-stacktrace: on_param
+
+logging:
+  level:
+    root: DEBUG
+    {{ package_name }}: TRACE
+    org.springframework.web: DEBUG
+    org.hibernate: DEBUG
