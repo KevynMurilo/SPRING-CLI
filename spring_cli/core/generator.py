@@ -8,45 +8,20 @@ from rich.console import Console
 from InquirerPy import inquirer
 from InquirerPy.base.control import Choice
 from spring_cli.core.renderer import TemplateRenderer
+from spring_cli.core.constants import (
+    ENCODING,
+    SPRING_BOOT_ANNOTATION,
+    JVM_ENCODING_ARG
+)
+from spring_cli.core.dependencies import (
+    JWT_DEPENDENCIES,
+    SWAGGER_DEPENDENCY,
+    LOMBOK_DEPENDENCY,
+    MAPSTRUCT_DEPENDENCIES,
+    MAPSTRUCT_PROCESSOR
+)
 
 console = Console()
-
-JWT_DEPENDENCIES = """
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>0.11.5</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>0.11.5</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>0.11.5</version>
-        </dependency>
-        """
-
-SWAGGER_DEPENDENCY = """
-        <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-        """
-
-LOMBOK_DEPENDENCY = """
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        """
-
-ENCODING = "utf-8"
-SPRING_BOOT_ANNOTATION = "@SpringBootApplication"
 
 
 class ProjectGenerator:
@@ -81,10 +56,15 @@ class ProjectGenerator:
             if self.config.get('use_exception_handler'):
                 self._inject_lombok_dependency()
 
+            if self.config.get('use_mapstruct'):
+                self._inject_mapstruct_dependencies()
+
             self._configure_maven_plugins()
-            self._inject_properties()
+            self._create_application_yml()
             self._create_scaffolding()
             self._create_ops_files()
+            self._create_cicd_files()
+            self._create_k8s_files()
             self._create_config_files()
             self._create_ide_config()
             self._cleanup()
@@ -183,6 +163,42 @@ class ProjectGenerator:
     def _inject_lombok_dependency(self):
         self._inject_pom_dependency(LOMBOK_DEPENDENCY, "Lombok", "lombok")
 
+    def _inject_mapstruct_dependencies(self):
+        self._inject_pom_dependency(MAPSTRUCT_DEPENDENCIES, "MapStruct", "mapstruct")
+        self._configure_mapstruct_processor()
+
+    def _configure_mapstruct_processor(self):
+        """Configure MapStruct annotation processor for Maven"""
+        pom_path = self.project_root / "pom.xml"
+        if not pom_path.exists():
+            return
+
+        try:
+            content = pom_path.read_text(encoding=ENCODING)
+
+            # Check if maven-compiler-plugin exists
+            if "maven-compiler-plugin" in content and "annotationProcessorPaths" not in content:
+                # Add annotation processor paths
+                processor_config = f"""
+                <configuration>
+                    <source>17</source>
+                    <target>17</target>
+                    <annotationProcessorPaths>
+{MAPSTRUCT_PROCESSOR}
+                    </annotationProcessorPaths>
+                </configuration>"""
+
+                content = re.sub(
+                    r'(<artifactId>maven-compiler-plugin</artifactId>\s*</plugin>)',
+                    r'<artifactId>maven-compiler-plugin</artifactId>' + processor_config + r'\n\t\t\t</plugin>',
+                    content
+                )
+                pom_path.write_text(content, encoding=ENCODING)
+                console.print("[green]OK[/green] MapStruct annotation processor configured")
+
+        except (IOError, OSError) as error:
+            console.print(f"[yellow]Warning: Could not configure MapStruct processor: {error}[/yellow]")
+
     def _configure_maven_plugins(self):
         """Configure build tool plugins (Maven or Gradle)"""
         pom_path = self.project_root / "pom.xml"
@@ -207,9 +223,9 @@ class ProjectGenerator:
                     # Find the spring-boot-maven-plugin and add configuration
                     plugin_pattern = r'(<artifactId>spring-boot-maven-plugin</artifactId>)'
                     if re.search(plugin_pattern, content):
-                        plugin_config = """
+                        plugin_config = f"""
                     <configuration>
-                        <jvmArguments>-Dspring-boot.run.jvmArguments="-Dfile.encoding=UTF-8"</jvmArguments>
+                        <jvmArguments>-Dspring-boot.run.jvmArguments="{JVM_ENCODING_ARG}"</jvmArguments>
                     </configuration>"""
 
                         content = re.sub(
@@ -230,16 +246,16 @@ class ProjectGenerator:
             # Check if bootRun task already has jvmArgs configuration
             if "bootRun" not in content or "jvmArgs" not in content:
                 if is_kotlin:
-                    bootrun_config = """
-tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
-    jvmArgs = listOf("-Dfile.encoding=UTF-8")
-}
+                    bootrun_config = f"""
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {{
+    jvmArgs = listOf("{JVM_ENCODING_ARG}")
+}}
 """
                 else:
-                    bootrun_config = """
-tasks.named('bootRun') {
-    jvmArgs = ['-Dfile.encoding=UTF-8']
-}
+                    bootrun_config = f"""
+tasks.named('bootRun') {{
+    jvmArgs = ['{JVM_ENCODING_ARG}']
+}}
 """
                 content += "\n" + bootrun_config
                 gradle_path.write_text(content, encoding=ENCODING)
@@ -278,26 +294,46 @@ tasks.named('bootRun') {
         except (IOError, OSError) as error:
             console.print(f"[yellow]Warning: Could not modify pom.xml: {error}[/yellow]")
 
-    def _inject_properties(self):
-        prop_file = self.resources_root / "application.properties"
-        prop_file.parent.mkdir(parents=True, exist_ok=True)
-        prop_file.touch(exist_ok=True)
+    def _create_application_yml(self):
+        """Create application.yml and profile-specific configurations"""
+        self.resources_root.mkdir(parents=True, exist_ok=True)
 
-        dependencies = self.config['dependencies'].split(',')
-        snippets = []
+        deps = self.config['dependencies']
+        db_type = self._detect_database_type(deps)
 
-        for dep in dependencies:
-            snippet = self.renderer.get_property_snippet(dep)
-            if snippet:
-                snippets.append(f"\n# --- Auto-Config: {dep} ---")
-                snippets.append(snippet)
+        context = {
+            "project_name": self.config['artifactId'],
+            "package_name": self._extract_package_name(),
+            "database": db_type,
+            "has_redis": "redis" in deps,
+            "has_kafka": "kafka" in deps,
+            "has_mail": "mail" in deps,
+            "has_jwt": self.config.get('use_jwt', False),
+            "has_actuator": "actuator" in deps
+        }
 
-        if snippets:
+        # Main application.yml
+        self._write_config_file("application.yml.jinja2", "application.yml", context)
+
+        # Profile-specific configurations
+        for profile in ["dev", "test", "prod"]:
+            self._write_config_file(
+                f"application-{profile}.yml.jinja2",
+                f"application-{profile}.yml",
+                context
+            )
+
+        console.print("[green]OK[/green] Application configuration files created")
+
+    def _write_config_file(self, template_name: str, output_name: str, context: Dict[str, Any]):
+        """Write a configuration file from template"""
+        content = self.renderer.render_config(template_name, context)
+        if content:
+            output_path = self.resources_root / output_name
             try:
-                with open(prop_file, "a", encoding=ENCODING) as file:
-                    file.write("\n".join(snippets))
+                output_path.write_text(content, encoding=ENCODING)
             except (IOError, OSError) as error:
-                console.print(f"[yellow]Warning: Could not write properties: {error}[/yellow]")
+                console.print(f"[yellow]Warning: Could not write {output_name}: {error}[/yellow]")
 
     def _create_ops_files(self):
         deps = self.config['dependencies']
@@ -309,6 +345,60 @@ tasks.named('bootRun') {
         self._write_ops_file("docker-compose.yml.jinja2", "docker-compose.yml", context)
 
         console.print("[green]OK[/green] Docker files generated")
+
+    def _create_cicd_files(self):
+        """Create CI/CD pipeline files (GitHub Actions)"""
+        if not self.config.get('use_cicd', False):
+            return
+
+        github_dir = self.project_root / ".github" / "workflows"
+        github_dir.mkdir(parents=True, exist_ok=True)
+
+        # Detect build tool
+        build_tool = "maven" if (self.project_root / "pom.xml").exists() else "gradle"
+
+        context = {
+            "project_name": self.config['artifactId'],
+            "java_version": self.config.get('javaVersion', '17'),
+            "build_tool": build_tool
+        }
+
+        content = self.renderer.render_ops("ci.yml.jinja2", context)
+        if content:
+            output_path = github_dir / "ci.yml"
+            try:
+                output_path.write_text(content, encoding=ENCODING)
+                console.print("[green]OK[/green] CI/CD pipeline generated")
+            except (IOError, OSError) as error:
+                console.print(f"[yellow]Warning: Could not write CI/CD files: {error}[/yellow]")
+
+    def _create_k8s_files(self):
+        """Create Kubernetes manifests"""
+        if not self.config.get('use_k8s', False):
+            return
+
+        k8s_dir = self.project_root / "k8s"
+        k8s_dir.mkdir(parents=True, exist_ok=True)
+
+        deps = self.config['dependencies']
+        db_type = self._detect_database_type(deps)
+
+        context = {
+            "project_name": self.config['artifactId'],
+            "database": db_type
+        }
+
+        # Create deployment and service
+        deployment_content = self.renderer.render_ops("deployment.yml.jinja2", context)
+        if deployment_content:
+            (k8s_dir / "deployment.yml").write_text(deployment_content, encoding=ENCODING)
+
+        # Create configmap
+        configmap_content = self.renderer.render_ops("configmap.yml.jinja2", context)
+        if configmap_content:
+            (k8s_dir / "configmap.yml").write_text(configmap_content, encoding=ENCODING)
+
+        console.print("[green]OK[/green] Kubernetes manifests generated")
 
     def _detect_database_type(self, dependencies: str) -> str:
         if "postgresql" in dependencies:
@@ -424,29 +514,77 @@ tasks.named('bootRun') {
         console.print("[green]OK[/green] DTO layer configured")
 
     def _setup_common_layers(self, config_path: Path, context: Dict[str, Any]):
-        """Setup common layers (security, swagger, exception handler, DTOs) for any architecture"""
+        """Setup common layers (security, swagger, exception handler, DTOs, CORS, etc.) for any architecture"""
+        config_path.mkdir(parents=True, exist_ok=True)
+        package_name = self._get_package_for_path(config_path)
+        config_context = {**context, "package_name": package_name}
+
+        # Security layer
         if self.config.get('use_jwt'):
             self._create_security_layer(config_path, context)
 
+        # Swagger/OpenAPI
         if self.config.get('use_swagger'):
             self._create_swagger_config(config_path, context)
 
+        # CORS configuration
+        if self.config.get('use_cors', False):
+            self._write_java_file(config_path, "CorsConfig", "CorsConfig.java.jinja2", config_context)
+
+        # Web configuration (RestTemplate, etc.)
+        if "web" in self.config['dependencies']:
+            self._write_java_file(config_path, "WebConfig", "WebConfig.java.jinja2", config_context)
+
+        # Exception handler and DTOs
         if self.config.get('use_exception_handler'):
-            # Determine exception handler path based on architecture
+            # Determine paths based on architecture
             if "infrastructure" in str(config_path):
                 exception_path = config_path.parent / "exception"
+                dto_path = config_path.parent / "dto"
             else:
                 exception_path = self.java_root / "exception"
-
-            self._create_exception_handler(exception_path, context)
-
-            # Create DTO layer alongside exception handler
-            if "infrastructure" in str(exception_path):
-                dto_path = exception_path.parent / "dto"
-            else:
                 dto_path = self.java_root / "dto"
 
+            self._create_exception_handler(exception_path, context)
             self._create_dto_layer(dto_path, context)
+
+        # JPA Auditing
+        if "data-jpa" in self.config['dependencies']:
+            model_path = self._get_model_path_for_architecture()
+            model_package = self._get_package_for_path(model_path)
+            model_context = {**context, "package_name": model_package}
+
+            self._write_java_file(config_path, "AuditConfig", "AuditConfig.java.jinja2", config_context)
+            self._write_java_file(model_path, "BaseEntity", "BaseEntity.java.jinja2", model_context)
+
+        # MapStruct mapper
+        if self.config.get('use_mapstruct'):
+            mapper_path = self._get_mapper_path_for_architecture()
+            mapper_package = self._get_package_for_path(mapper_path)
+            mapper_context = {**context, "package_name": mapper_package}
+            self._write_java_file(mapper_path, "DemoMapper", "DemoMapper.java.jinja2", mapper_context)
+
+    def _get_model_path_for_architecture(self) -> Path:
+        """Get model/entity path based on architecture"""
+        structure = self.config.get('structure', 'mvc')
+        if structure == 'mvc':
+            return self.java_root / "model"
+        elif structure == 'feature':
+            return self.java_root / "features/demo/model"
+        elif structure in ['clean', 'hexagonal']:
+            return self.java_root / "domain/model"
+        return self.java_root / "model"
+
+    def _get_mapper_path_for_architecture(self) -> Path:
+        """Get mapper path based on architecture"""
+        structure = self.config.get('structure', 'mvc')
+        if structure == 'mvc':
+            return self.java_root / "mapper"
+        elif structure == 'feature':
+            return self.java_root / "features/demo/mapper"
+        elif structure in ['clean', 'hexagonal']:
+            return self.java_root / "application/mapper"
+        return self.java_root / "mapper"
 
     def _create_mvc_structure(self, context: Dict[str, Any]):
         folders = ['controller', 'service', 'repository', 'model', 'config']
