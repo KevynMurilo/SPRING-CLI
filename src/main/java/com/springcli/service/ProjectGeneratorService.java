@@ -26,6 +26,7 @@ public class ProjectGeneratorService {
     private final TemplateService templateService;
     private final FileSystemService fileSystemService;
     private final PomManipulationService pomManipulationService;
+    private final GradleManipulationService gradleManipulationService;
 
     public void generateProject(ProjectConfig config) {
         try {
@@ -154,11 +155,22 @@ public class ProjectGeneratorService {
 
     private void injectDependencies(ProjectConfig config, Path projectRoot) throws IOException {
         Path pomPath = projectRoot.resolve("pom.xml");
-        if (!Files.exists(pomPath)) return;
+        Path gradlePath = projectRoot.resolve("build.gradle");
+        Path gradleKtsPath = projectRoot.resolve("build.gradle.kts");
 
-        String pomContent = fileSystemService.readFile(pomPath);
-        String modifiedPom = pomManipulationService.injectDependencies(pomContent, config.features(), config.springBootVersion());
-        fileSystemService.writeFile(pomPath, modifiedPom);
+        if (Files.exists(pomPath)) {
+            String pomContent = fileSystemService.readFile(pomPath);
+            String modifiedPom = pomManipulationService.injectDependencies(pomContent, config.features(), config.springBootVersion());
+            fileSystemService.writeFile(pomPath, modifiedPom);
+        } else if (Files.exists(gradlePath)) {
+            String gradleContent = fileSystemService.readFile(gradlePath);
+            String modifiedGradle = gradleManipulationService.injectDependencies(gradleContent, config.features(), config.springBootVersion());
+            fileSystemService.writeFile(gradlePath, modifiedGradle);
+        } else if (Files.exists(gradleKtsPath)) {
+            String gradleContent = fileSystemService.readFile(gradleKtsPath);
+            String modifiedGradle = gradleManipulationService.injectDependencies(gradleContent, config.features(), config.springBootVersion());
+            fileSystemService.writeFile(gradleKtsPath, modifiedGradle);
+        }
     }
 
     private void generateConfigFiles(ProjectConfig config, Path projectRoot) throws IOException {
