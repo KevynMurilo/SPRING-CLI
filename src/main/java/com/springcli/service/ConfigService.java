@@ -31,9 +31,14 @@ public class ConfigService {
         }
 
         try {
+            if (Files.size(configFilePath) == 0) {
+                log.info("Config file found but empty, using defaults");
+                return UserConfig.defaults();
+            }
+
             return objectMapper.readValue(configFilePath.toFile(), UserConfig.class);
         } catch (IOException e) {
-            log.warn("Failed to read config file, using defaults", e);
+            log.warn("Failed to read config file, using defaults: {}", e.getMessage());
             return UserConfig.defaults();
         }
     }
