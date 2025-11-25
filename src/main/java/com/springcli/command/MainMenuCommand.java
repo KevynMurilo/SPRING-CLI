@@ -35,14 +35,14 @@ public class MainMenuCommand {
             consoleService.printInfo("╚══════════════════════════════════════════════════════════════════╝\n");
 
             List<SelectorItem<String>> menuItems = List.of(
-                    SelectorItem.of("🚀 Generate New Project      - Create a complete Spring Boot project", "generate"),
-                    SelectorItem.of("📦 Quick Generate            - Fast project generation (interactive)", "quick"),
-                    SelectorItem.of("⭐ Manage Presets            - Create, edit, or delete custom presets", "manage-presets"),
-                    SelectorItem.of("📋 List Presets              - View available project templates", "presets"),
-                    SelectorItem.of("⚙️  Configure CLI            - Set default preferences (interactive)", "config"),
-                    SelectorItem.of("🛠️  Utilities                - Clear cache, refresh metadata, system info", "utilities"),
-                    SelectorItem.of("ℹ️  About                    - Information about Spring CLI", "about"),
-                    SelectorItem.of("❌ Exit                      - Close the application", "exit")
+                    SelectorItem.of("🚀 Generate New Project - Create a complete Spring Boot project", "generate"),
+                    SelectorItem.of("📦 Quick Generate       - Fast project generation (interactive)", "quick"),
+                    SelectorItem.of("⭐ Manage Presets       - Create, edit, or delete custom presets", "manage-presets"),
+                    SelectorItem.of("📋 List Presets         - View available project templates", "presets"),
+                    SelectorItem.of("⚙️  Configure CLI        - Set default preferences (interactive)", "config"),
+                    SelectorItem.of("🛠️  Utilities            - Clear cache, refresh metadata, system info", "utilities"),
+                    SelectorItem.of("ℹ️  About                - Information about Spring CLI", "about"),
+                    SelectorItem.of("❌ Exit                  - Close the application", "exit")
             );
 
             SingleItemSelector<String, SelectorItem<String>> selector = new SingleItemSelector<>(
@@ -118,13 +118,13 @@ public class MainMenuCommand {
             String groupId = askInput("Group ID", "com.example");
 
             List<SelectorItem<String>> archItems = List.of(
-                    SelectorItem.of("CLEAN       - Clean Architecture (Recommended)", "CLEAN"),
-                    SelectorItem.of("HEXAGONAL   - Hexagonal (Ports & Adapters)", "HEXAGONAL"),
-                    SelectorItem.of("MVC         - Model-View-Controller", "MVC"),
-                    SelectorItem.of("LAYERED     - Layered Architecture", "LAYERED"),
-                    SelectorItem.of("DDD         - Domain-Driven Design", "DDD"),
-                    SelectorItem.of("CQRS        - Command Query Responsibility Segregation", "CQRS"),
-                    SelectorItem.of("🔙 Cancel   - Return to menu", "CANCEL")
+                    SelectorItem.of("CLEAN     - Clean Architecture (Recommended)", "CLEAN"),
+                    SelectorItem.of("HEXAGONAL - Hexagonal (Ports & Adapters)", "HEXAGONAL"),
+                    SelectorItem.of("MVC       - Model-View-Controller", "MVC"),
+                    SelectorItem.of("LAYERED   - Layered Architecture", "LAYERED"),
+                    SelectorItem.of("DDD       - Domain-Driven Design", "DDD"),
+                    SelectorItem.of("CQRS      - Command Query Responsibility Segregation", "CQRS"),
+                    SelectorItem.of("🔙 Cancel - Return to menu", "CANCEL")
             );
 
             SingleItemSelector<String, SelectorItem<String>> archSelector = new SingleItemSelector<>(
@@ -175,11 +175,11 @@ public class MainMenuCommand {
             consoleService.printInfo("╚══════════════════════════════════════════════════════════════════╝\n");
 
             List<SelectorItem<String>> utilityItems = List.of(
-                    SelectorItem.of("🗑️  Clear Cache              - Remove cached metadata", "clear-cache"),
-                    SelectorItem.of("🔄 Refresh Metadata         - Update from Spring Initializr", "refresh-metadata"),
-                    SelectorItem.of("ℹ️  System Info              - Show system information", "system-info"),
-                    SelectorItem.of("📖 Help                     - Show all available commands", "help"),
-                    SelectorItem.of("🔙 Back to Main Menu        - Return to main menu", "back")
+                    SelectorItem.of("🗑️  Clear Cache         - Remove cached metadata", "clear-cache"),
+                    SelectorItem.of("🔄 Refresh Metadata    - Update from Spring Initializr", "refresh-metadata"),
+                    SelectorItem.of("ℹ️  System Info         - Show system information", "system-info"),
+                    SelectorItem.of("📖 Help                - Show all available commands", "help"),
+                    SelectorItem.of("🔙 Back to Main Menu   - Return to main menu", "back")
             );
 
             SingleItemSelector<String, SelectorItem<String>> selector = new SingleItemSelector<>(
