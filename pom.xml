@@ -130,6 +130,7 @@
 			<plugin>
 				<groupId>org.graalvm.buildtools</groupId>
 				<artifactId>native-maven-plugin</artifactId>
+				<version>0.10.2</version>
 				<configuration>
 					<imageName>spring-cli</imageName>
 					<mainClass>com.springcli.SpringCliApplication</mainClass>
@@ -146,7 +147,15 @@
 						<buildArg>-H:IncludeResources=.*\.template</buildArg>
 					</buildArgs>
 				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>compile-no-fork</goal>
+						</goals>
+					</execution>
+				</executions>
 			</plugin>
+
 
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
