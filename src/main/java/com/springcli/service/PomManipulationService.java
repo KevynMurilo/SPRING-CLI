@@ -87,7 +87,6 @@ public class PomManipulationService {
 
     private String getJwtDependencies(String jjwtVersion) {
         return """
-                    <!-- JWT Dependencies -->
                     <dependency>
                         <groupId>io.jsonwebtoken</groupId>
                         <artifactId>jjwt-api</artifactId>
@@ -110,7 +109,6 @@ public class PomManipulationService {
 
     private String getSwaggerDependency(String springDocVersion) {
         return """
-                    <!-- SpringDoc OpenAPI -->
                     <dependency>
                         <groupId>org.springdoc</groupId>
                         <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -121,7 +119,6 @@ public class PomManipulationService {
 
     private String getMapStructDependency(String mapStructVersion) {
         return """
-                    <!-- MapStruct -->
                     <dependency>
                         <groupId>org.mapstruct</groupId>
                         <artifactId>mapstruct</artifactId>
@@ -152,13 +149,15 @@ public class PomManipulationService {
     }
 
     private String injectMapStructPluginConfiguration(String pomContent, String mapStructVersion) {
+        LibraryVersions versions = versionResolver.resolveVersions(extractSpringBootVersionFromPom(pomContent));
+
         String mapStructPlugin = """
                 <build>
                     <plugins>
                         <plugin>
                             <groupId>org.apache.maven.plugins</groupId>
                             <artifactId>maven-compiler-plugin</artifactId>
-                            <version>3.11.0</version>
+                            <version>%s</version>
                             <configuration>
                                 <annotationProcessorPaths>
                                     <path>
@@ -174,14 +173,14 @@ public class PomManipulationService {
                                     <path>
                                         <groupId>org.projectlombok</groupId>
                                         <artifactId>lombok-mapstruct-binding</artifactId>
-                                        <version>0.2.0</version>
+                                        <version>%s</version>
                                     </path>
                                 </annotationProcessorPaths>
                             </configuration>
                         </plugin>
                     </plugins>
                 </build>
-                """.formatted(mapStructVersion);
+                """.formatted(versions.mavenCompilerPluginVersion(), mapStructVersion, versions.lombokMapstructBindingVersion());
 
         int projectEnd = pomContent.indexOf("</project>");
         if (projectEnd != -1) {
@@ -189,5 +188,16 @@ public class PomManipulationService {
         }
 
         return pomContent;
+    }
+
+    private String extractSpringBootVersionFromPom(String pomContent) {
+        int versionStart = pomContent.indexOf("<version>", pomContent.indexOf("spring-boot-dependencies"));
+        if (versionStart == -1) return null;
+
+        versionStart += 9;
+        int versionEnd = pomContent.indexOf("</version>", versionStart);
+        if (versionEnd == -1) return null;
+
+        return pomContent.substring(versionStart, versionEnd);
     }
 }
