@@ -295,8 +295,7 @@ public class MainMenuCommand {
             consoleService.printSuccess("\n🔙 Press ENTER to return to main menu...");
             terminal.reader().read();
             consoleService.clearScreen();
-        } catch (Exception e) {
-            // Ignore
+        } catch (Exception ignored) {
         }
     }
 }

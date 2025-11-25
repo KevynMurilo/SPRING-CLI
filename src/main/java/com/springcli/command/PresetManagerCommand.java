@@ -102,14 +102,12 @@ public class PresetManagerCommand {
 
         consoleService.printSuccess("Let's create your custom preset! 🎨\n");
 
-        // 1. Nome do Preset
         String presetName = uiSelector.askString("Preset Name (e.g., 'My API Template')", "");
         if (presetName.trim().isEmpty()) {
             consoleService.printError("Preset name cannot be empty!");
             return;
         }
 
-        // Verifica se já existe
         List<Preset> existingPresets = presetService.getAllPresets();
         boolean nameExists = existingPresets.stream()
                 .anyMatch(p -> p.name().equalsIgnoreCase(presetName));
@@ -119,31 +117,25 @@ public class PresetManagerCommand {
             return;
         }
 
-        // 2. Descrição
         String description = uiSelector.askString("Description (brief description of the preset)", "");
 
-        // 3. Arquitetura
         consoleService.printInfo("\n📐 SELECT ARCHITECTURE");
         Architecture architecture = selectArchitecture();
 
-        // 4. Versão do Java
         consoleService.printInfo("\n☕ SELECT JAVA VERSION");
         String javaVersion = selectJavaVersion();
 
-        // 5. Dependências
         consoleService.printInfo("\n📦 SELECT DEPENDENCIES");
         consoleService.printInfo("  ℹ️  Choose the dependencies your preset should include\n");
 
         SpringMetadata metadata = metadataService.getMetadata();
         Set<String> dependencies = dependencySelector.selectDependenciesByCategory(new HashSet<>(), metadata);
 
-        // 6. Features
         consoleService.printInfo("\n⚙️  CONFIGURE FEATURES");
         consoleService.printInfo("  ℹ️  Set default feature configurations for this preset\n");
 
         ProjectFeatures features = featureCustomizer.customizeFeatures(ProjectFeatures.defaults(), dependencies);
 
-        // Criar o preset
         Preset newPreset = new Preset(
                 presetName,
                 description.isEmpty() ? "Custom preset" : description,
@@ -151,13 +143,11 @@ public class PresetManagerCommand {
                 javaVersion,
                 dependencies,
                 features,
-                false // não é built-in
+                false
         );
 
-        // Salvar
         presetService.savePreset(newPreset);
 
-        // Confirmação
         consoleService.clearScreen();
         consoleService.printSuccess("\n✅ PRESET CREATED SUCCESSFULLY!\n");
         displayPresetSummary(newPreset);
@@ -176,14 +166,12 @@ public class PresetManagerCommand {
             return;
         }
 
-        // Selecionar preset para editar
         Preset selectedPreset = selectPreset(allPresets, "Select preset to edit:");
         if (selectedPreset == null) return;
 
         consoleService.printInfo("\n📝 Editing preset: " + selectedPreset.name());
         consoleService.printWarning("  ℹ️  Press ENTER to keep current value\n");
 
-        // Editar cada campo
         String newName = uiSelector.askString("Preset Name", selectedPreset.name());
         String newDescription = uiSelector.askString("Description", selectedPreset.description());
 
@@ -210,7 +198,6 @@ public class PresetManagerCommand {
                 featureCustomizer.customizeFeatures(selectedPreset.features(), newDependencies) :
                 selectedPreset.features();
 
-        // Criar preset atualizado
         Preset updatedPreset = new Preset(
                 newName,
                 newDescription,
@@ -218,15 +205,13 @@ public class PresetManagerCommand {
                 newJavaVersion,
                 newDependencies,
                 newFeatures,
-                false // sempre salva como custom
+                false
         );
 
-        // Se mudou o nome, deletar o antigo
         if (!newName.equals(selectedPreset.name()) && !selectedPreset.builtIn()) {
             presetService.deletePreset(selectedPreset.name());
         }
 
-        // Salvar
         presetService.savePreset(updatedPreset);
 
         consoleService.clearScreen();
@@ -399,8 +384,7 @@ public class PresetManagerCommand {
         try {
             consoleService.printSuccess("\n🔙 Press ENTER to return to preset manager...");
             terminal.reader().read();
-        } catch (Exception e) {
-            // Ignore
+        } catch (Exception ignored) {
         }
     }
 }
