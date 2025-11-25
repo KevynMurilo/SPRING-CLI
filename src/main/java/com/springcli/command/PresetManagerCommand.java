@@ -40,11 +40,11 @@ public class PresetManagerCommand {
             consoleService.printInfo("╚══════════════════════════════════════════════════════════════════╝\n");
 
             List<SelectorItem<String>> menuItems = List.of(
-                    SelectorItem.of("➕ Create New Preset     - Build a custom preset from scratch", "create"),
-                    SelectorItem.of("✏️  Edit Existing Preset - Modify an existing preset", "edit"),
-                    SelectorItem.of("📋 List All Presets      - View all available presets", "list"),
-                    SelectorItem.of("🗑️  Delete Preset        - Remove a custom preset", "delete"),
-                    SelectorItem.of("🔙 Back to Main Menu     - Return to main menu", "back")
+                    SelectorItem.of("➕ Create New Preset      - Build a custom preset from scratch", "create"),
+                    SelectorItem.of("✏️  Edit Existing Preset  - Modify an existing preset", "edit"),
+                    SelectorItem.of("📋 List All Presets       - View all available presets", "list"),
+                    SelectorItem.of("🗑️  Delete Preset         - Remove a custom preset", "delete"),
+                    SelectorItem.of("🔙 Back to Main Menu      - Return to main menu", "back")
             );
 
             SingleItemSelector<String, SelectorItem<String>> selector = new SingleItemSelector<>(
@@ -279,6 +279,7 @@ public class PresetManagerCommand {
         }
 
         System.out.println();
+        waitForKeyPress();
     }
 
     private void displayPresetListItem(Preset preset) {
