@@ -11,7 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 {% if features.enableJwt %}
-{% if currentPackage != pkg['security'] %}
+    {% if currentPackage != pkg['security'] %}
 import {{ pkg.security }}.JwtAuthenticationFilter;
 import {{ pkg.security }}.JwtAuthenticationEntryPoint;
 {% endif %}
@@ -40,11 +40,28 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         {% if features.enableSwagger %}
-                        .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // Liberar endpoints do Swagger/OpenAPI
+                        .requestMatchers(
+                            "/swagger-ui.html",
+                            "/swagger-ui/**",
+                            "/v3/api-docs/**",
+                            "/swagger-resources/**",
+                            "/webjars/**",
+                            "/configuration/ui",
+                            "/configuration/security"
+                        ).permitAll()
+                        {% endif %}
+    {% if database == 'h2' %}
+                        // Liberar console do H2
+                        .requestMatchers("/h2-console/**").permitAll()
                         {% endif %}
                         .anyRequest().authenticated()
                 )
-                {% if features.enableJwt %}
+                {% if database == 'h2' %}
+                // Configuração para o H2 Console
+                .headers(headers -> headers.frameOptions(frameOptions -> frameOptions.disable()))
+                {% endif %}
+    {% if features.enableJwt %}
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 {% endif %}

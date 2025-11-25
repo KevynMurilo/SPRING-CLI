@@ -3,12 +3,21 @@ package {{ currentPackage }};
 {% if currentPackage != pkg['model'] %}
 import {{ pkg.model }}.{{ entityName }};
 {% endif %}
-{% if currentPackage != pkg['repository'] %}
+
+{% if architecture == 'HEXAGONAL' or architecture == 'CLEAN' %}
+    {% if currentPackage != pkg['port-out'] %}
+import {{ pkg['port-out'] }}.{{ entityName }}Repository;
+    {% endif %}
+{% else %}
+    {% if currentPackage != pkg['repository'] %}
 import {{ pkg.repository }}.{{ entityName }}Repository;
+    {% endif %}
 {% endif %}
-{% if currentPackage != pkg['config'] %}
-import {{ pkg.config }}.ResourceNotFoundException;
+
+    {% if currentPackage != pkg['exception'] %}
+import {{ pkg.exception }}.ResourceNotFoundException;
 {% endif %}
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

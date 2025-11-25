@@ -7,7 +7,7 @@ import {{ pkg.service }}.{{ entityName }}Service;
 import {{ pkg.model }}.{{ entityName }};
 {% endif %}
 import org.springframework.web.bind.annotation.*;
-{% if enableSwagger %}
+{% if features.enableSwagger %}
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 {% endif %}
@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
-{% if enableSwagger %}
+{% if features.enableSwagger %}
 @Tag(name = "{{ entityName }}", description = "{{ entityName }} management APIs")
 {% endif %}
 @RestController
@@ -25,7 +25,7 @@ public class {{ entityName }}Controller {
 
     private final {{ entityName }}Service service;
 
-    {% if enableSwagger %}
+    {% if features.enableSwagger %}
     @Operation(summary = "Get all {{ entityName | lower }}s")
     {% endif %}
     @GetMapping
@@ -33,7 +33,7 @@ public class {{ entityName }}Controller {
         return service.findAll();
     }
 
-    {% if enableSwagger %}
+    {% if features.enableSwagger %}
     @Operation(summary = "Get {{ entityName | lower }} by ID")
     {% endif %}
     @GetMapping("/{id}")
@@ -41,7 +41,7 @@ public class {{ entityName }}Controller {
         return service.findById(id);
     }
 
-    {% if enableSwagger %}
+    {% if features.enableSwagger %}
     @Operation(summary = "Create new {{ entityName | lower }}")
     {% endif %}
     @PostMapping
@@ -49,7 +49,7 @@ public class {{ entityName }}Controller {
         return service.save(entity);
     }
 
-    {% if enableSwagger %}
+    {% if features.enableSwagger %}
     @Operation(summary = "Update {{ entityName | lower }}")
     {% endif %}
     @PutMapping("/{id}")
@@ -57,7 +57,7 @@ public class {{ entityName }}Controller {
         return service.update(id, entity);
     }
 
-    {% if enableSwagger %}
+    {% if features.enableSwagger %}
     @Operation(summary = "Delete {{ entityName | lower }}")
     {% endif %}
     @DeleteMapping("/{id}")

@@ -6,8 +6,8 @@ import {{ pkg.model }}.{{ entityName }};
 {% if currentPackage != pkg['port-out'] %}
 import {{ pkg['port-out'] }}.{{ entityName }}Repository;
 {% endif %}
-{% if currentPackage != pkg['config'] %}
-import {{ pkg.config }}.ResourceNotFoundException;
+{% if currentPackage != pkg['exception'] %}
+import {{ pkg.exception }}.ResourceNotFoundException;
 {% endif %}
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
