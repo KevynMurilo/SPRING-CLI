@@ -48,6 +48,13 @@ public class GenerateCommand {
             UserConfig userConfig = configService.loadConfig();
 
             Optional<Preset> selectedPreset = selectPreset();
+
+            // Verifica se foi cancelado
+            if (selectedPreset.isPresent() && selectedPreset.get() == null) {
+                consoleService.printWarning("\n❌ Project generation cancelled.");
+                return;
+            }
+
             ProjectConfig config = selectedPreset.isPresent()
                     ? buildConfigFromPreset(selectedPreset.get(), metadata, userConfig)
                     : buildConfigFromScratch(metadata, userConfig);
@@ -114,11 +121,16 @@ public class GenerateCommand {
         List<Preset> presets = presetService.getAllPresets();
 
         List<SelectorItem<String>> items = new ArrayList<>();
-        items.add(SelectorItem.of("Start from scratch", "SCRATCH"));
 
+        // Adiciona presets
         presets.forEach(preset ->
                 items.add(SelectorItem.of(preset.name() + " - " + preset.description(), preset.name()))
         );
+
+        // Opções extras
+        items.add(SelectorItem.of("─────────────────────────────────────", "SEPARATOR"));
+        items.add(SelectorItem.of("Start from scratch - Configure everything manually", "SCRATCH"));
+        items.add(SelectorItem.of("🔙 Cancel - Return to main menu", "CANCEL"));
 
         SingleItemSelector<String, SelectorItem<String>> selector = new SingleItemSelector<>(
                 terminal,
@@ -135,7 +147,15 @@ public class GenerateCommand {
 
         Optional<String> selected = context.getResultItem().map(SelectorItem::getItem);
 
-        if (selected.isEmpty() || "SCRATCH".equals(selected.get())) {
+        if (selected.isEmpty() || "CANCEL".equals(selected.get())) {
+            return Optional.of(null); // Retorna null dentro do Optional para indicar cancelamento
+        }
+
+        if ("SEPARATOR".equals(selected.get())) {
+            return selectPreset(); // Reexibe o menu se selecionou o separador
+        }
+
+        if ("SCRATCH".equals(selected.get())) {
             return Optional.empty();
         }
 

@@ -1,18 +1,27 @@
 package com.springcli.command;
 
 import com.springcli.infra.console.ConsoleService;
+import com.springcli.model.Architecture;
 import com.springcli.model.Preset;
 import com.springcli.model.UserConfig;
 import com.springcli.service.CacheService;
 import com.springcli.service.ConfigService;
 import com.springcli.service.MetadataService;
 import com.springcli.service.PresetService;
+import com.springcli.service.UISelector;
 import lombok.RequiredArgsConstructor;
+import org.jline.terminal.Terminal;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.shell.component.SingleItemSelector;
+import org.springframework.shell.component.support.SelectorItem;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
+import org.springframework.shell.style.TemplateExecutor;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @ShellComponent
 @RequiredArgsConstructor
@@ -23,6 +32,10 @@ public class UtilityCommands {
     private final CacheService cacheService;
     private final MetadataService metadataService;
     private final ConsoleService consoleService;
+    private final UISelector uiSelector;
+    private final Terminal terminal;
+    private final ResourceLoader resourceLoader;
+    private final TemplateExecutor templateExecutor;
 
     @ShellMethod(key = "list-presets", value = "List all available presets")
     public void listPresets() {
@@ -108,5 +121,109 @@ public class UtilityCommands {
         System.out.println("  User Home: " + System.getProperty("user.home"));
         System.out.println("  Config Dir: " + System.getProperty("user.home") + "/.spring-cli");
         consoleService.printSeparator();
+    }
+
+    public void configureInteractive() {
+        consoleService.clearScreen();
+        consoleService.printBanner();
+        consoleService.printInfo("\n╔══════════════════════════════════════════════════════════════════╗");
+        consoleService.printInfo("║                    CONFIGURE CLI                                 ║");
+        consoleService.printInfo("╚══════════════════════════════════════════════════════════════════╝\n");
+
+        consoleService.printSuccess("⚙️  Configure default values for project generation\n");
+
+        UserConfig currentConfig = configService.loadConfig();
+
+        // Default Group ID
+        String groupId = uiSelector.askString("Default Group ID", currentConfig.defaultGroupId());
+
+        // Default Java Version
+        List<SelectorItem<String>> javaItems = List.of(
+                SelectorItem.of("Java 21 (Recommended)", "21"),
+                SelectorItem.of("Java 17", "17")
+        );
+        String javaVersion = selectFromList(javaItems, "Default Java Version:", currentConfig.defaultJavaVersion());
+
+        // Default Packaging
+        List<SelectorItem<String>> packagingItems = List.of(
+                SelectorItem.of("JAR (Recommended)", "jar"),
+                SelectorItem.of("WAR", "war")
+        );
+        String packaging = selectFromList(packagingItems, "Default Packaging:", currentConfig.defaultPackaging());
+
+        // Default Architecture
+        List<SelectorItem<Architecture>> archItems = Arrays.stream(Architecture.values())
+                .map(arch -> SelectorItem.of(arch.name() + " - " + arch.getDisplayName(), arch))
+                .collect(Collectors.toList());
+        Architecture architecture = selectArchitecture(archItems, "Default Architecture:", currentConfig.defaultArchitecture());
+
+        // Default Output Directory
+        String outputDir = uiSelector.askString("Default Output Directory", currentConfig.defaultOutputDir());
+
+        // Auto Open IDE
+        boolean autoOpenIde = uiSelector.askYesNo("Auto-open IDE after generation?", currentConfig.autoOpenIde());
+
+        // Preferred IDE
+        String preferredIde = currentConfig.preferredIde();
+        if (autoOpenIde) {
+            List<SelectorItem<String>> ideItems = List.of(
+                    SelectorItem.of("IntelliJ IDEA", "idea"),
+                    SelectorItem.of("VS Code", "code"),
+                    SelectorItem.of("Eclipse", "eclipse")
+            );
+            preferredIde = selectFromList(ideItems, "Preferred IDE:", currentConfig.preferredIde());
+        }
+
+        // Generate README
+        boolean generateReadme = uiSelector.askYesNo("Generate README.md by default?", currentConfig.generateReadme());
+
+        // Generate Gitignore
+        boolean generateGitignore = uiSelector.askYesNo("Generate .gitignore by default?", currentConfig.generateGitignore());
+
+        // Use application.yml
+        boolean useApplicationYml = uiSelector.askYesNo("Use application.yml instead of application.properties?", currentConfig.useApplicationYml());
+
+        // Criar nova configuração
+        UserConfig newConfig = new UserConfig(
+                groupId,
+                javaVersion,
+                packaging,
+                architecture,
+                outputDir,
+                autoOpenIde,
+                preferredIde,
+                useApplicationYml,
+                generateReadme,
+                generateGitignore
+        );
+
+        // Salvar
+        configService.saveConfig(newConfig);
+
+        consoleService.clearScreen();
+        consoleService.printSuccess("\n✅ CONFIGURATION SAVED!\n");
+        showConfig();
+    }
+
+    private String selectFromList(List<SelectorItem<String>> items, String prompt, String defaultValue) {
+        SingleItemSelector<String, SelectorItem<String>> selector = new SingleItemSelector<>(
+                terminal, items, prompt, null
+        );
+        selector.setResourceLoader(resourceLoader);
+        selector.setTemplateExecutor(templateExecutor);
+
+        var context = selector.run(SingleItemSelector.SingleItemSelectorContext.empty());
+        return context.getResultItem().map(SelectorItem::getItem).orElse(defaultValue);
+    }
+
+    private Architecture selectArchitecture(List<SelectorItem<Architecture>> items, String prompt, Architecture defaultValue) {
+        SingleItemSelector<Architecture, SelectorItem<Architecture>> selector = new SingleItemSelector<>(
+                terminal, items, prompt, null
+        );
+        selector.setResourceLoader(resourceLoader);
+        selector.setTemplateExecutor(templateExecutor);
+
+        var context = selector.run(SingleItemSelector.SingleItemSelectorContext.empty());
+        return context.getResultItem().map(SelectorItem::getItem).orElse(defaultValue);
     }
 }
