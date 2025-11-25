@@ -1,24 +1,6 @@
 [
   {
-    "name": "com.springcli.model.Architecture",
-    "allDeclaredConstructors": true,
-    "allDeclaredMethods": true,
-    "allDeclaredFields": true
-  },
-  {
-    "name": "com.springcli.model.ProjectConfig",
-    "allDeclaredConstructors": true,
-    "allDeclaredMethods": true,
-    "allDeclaredFields": true
-  },
-  {
-    "name": "com.springcli.model.ProjectFeatures",
-    "allDeclaredConstructors": true,
-    "allDeclaredMethods": true,
-    "allDeclaredFields": true
-  },
-  {
-    "name": "com.springcli.model.Preset",
+    "name": "com.springcli.model.BuildToolOption",
     "allDeclaredConstructors": true,
     "allDeclaredMethods": true,
     "allDeclaredFields": true
@@ -30,7 +12,13 @@
     "allDeclaredFields": true
   },
   {
-    "name": "com.springcli.model.UserConfig",
+    "name": "com.springcli.model.Dependency",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.springcli.model.DependencyGroup",
     "allDeclaredConstructors": true,
     "allDeclaredMethods": true,
     "allDeclaredFields": true
