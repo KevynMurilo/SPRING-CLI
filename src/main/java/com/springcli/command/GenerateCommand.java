@@ -40,6 +40,7 @@ public class GenerateCommand {
     @ShellMethod(key = "generate", value = "Generate a new Spring Boot project")
     public void generate() {
         try {
+            consoleService.clearScreen();
             consoleService.printBanner();
             consoleService.printInfo("\nWelcome to Spring CLI Project Generator!\n");
 
@@ -81,6 +82,7 @@ public class GenerateCommand {
             @ShellOption(defaultValue = ".", help = "Output directory") String output
     ) {
         try {
+            consoleService.clearScreen();
             SpringMetadata metadata = metadataService.getMetadata();
 
             ProjectConfig config = new ProjectConfig(
@@ -432,6 +434,31 @@ public class GenerateCommand {
     private Set<String> browseDependenciesByCategory(SpringMetadata metadata, Set<String> currentSelection) {
         Set<String> workingSelection = new HashSet<>(currentSelection);
 
+        String category = selectCategory(metadata);
+        if ("back".equals(category)) {
+            return workingSelection;
+        }
+
+        DependencyGroup group = metadata.dependencyGroups().get(category);
+        if (group == null) {
+            return workingSelection;
+        }
+
+        showCurrentSelection(category, group, workingSelection);
+
+        String action = selectAction(group, workingSelection);
+
+        if ("add".equals(action)) {
+            workingSelection = handleAddDependencies(group, workingSelection);
+        } else if ("remove".equals(action)) {
+            workingSelection = handleRemoveDependencies(group, workingSelection);
+        }
+
+        showUpdatedSelection(category, group, workingSelection);
+        return workingSelection;
+    }
+
+    private String selectCategory(SpringMetadata metadata) {
         List<SelectorItem<String>> categoryItems = new ArrayList<>();
         categoryItems.add(SelectorItem.of(YELLOW + "← Back to Menu" + RESET, "back"));
         categoryItems.addAll(
@@ -446,47 +473,152 @@ public class GenerateCommand {
         catSelector.setResourceLoader(resourceLoader);
         catSelector.setTemplateExecutor(templateExecutor);
 
-        String category = catSelector.run(SingleItemSelector.SingleItemSelectorContext.empty())
+        return catSelector.run(SingleItemSelector.SingleItemSelectorContext.empty())
                 .getResultItem().map(SelectorItem::getItem).orElse("back");
+    }
 
-        if ("back".equals(category)) {
-            return workingSelection;
+    private void showCurrentSelection(String category, DependencyGroup group, Set<String> workingSelection) {
+        Set<String> selectedIds = getSelectedIdsInGroup(group, workingSelection);
+
+        consoleService.printInfo("  Current selection in " + category + ":");
+        if (selectedIds.isEmpty()) {
+            consoleService.printInfo("    " + YELLOW + "No dependencies selected" + RESET);
+        } else {
+            selectedIds.forEach(id -> {
+                String depName = getDependencyName(group, id);
+                consoleService.printInfo("    " + GREEN + "✓ " + depName + RESET);
+            });
+        }
+        consoleService.printInfo("");
+    }
+
+    private String selectAction(DependencyGroup group, Set<String> workingSelection) {
+        List<SelectorItem<String>> actionItems = new ArrayList<>();
+
+        List<Dependency> notSelectedDeps = getNotSelectedDependencies(group, workingSelection);
+        List<Dependency> selectedDeps = getSelectedDependencies(group, workingSelection);
+
+        if (!notSelectedDeps.isEmpty()) {
+            actionItems.add(SelectorItem.of(GREEN + "➕ Add Dependencies" + RESET, "add"));
         }
 
-        DependencyGroup group = metadata.dependencyGroups().get(category);
-        if (group == null) {
-            return workingSelection;
+        if (!selectedDeps.isEmpty()) {
+            actionItems.add(SelectorItem.of(YELLOW + "➖ Remove Dependencies" + RESET, "remove"));
         }
 
-        List<SelectorItem<String>> items = group.dependencies().stream()
+        actionItems.add(SelectorItem.of(CYAN + "✅ Done" + RESET, "done"));
+
+        SingleItemSelector<String, SelectorItem<String>> actionSelector = new SingleItemSelector<>(
+                terminal, actionItems, "  Choose action:", null
+        );
+        actionSelector.setResourceLoader(resourceLoader);
+        actionSelector.setTemplateExecutor(templateExecutor);
+
+        return actionSelector.run(SingleItemSelector.SingleItemSelectorContext.empty())
+                .getResultItem().map(SelectorItem::getItem).orElse("done");
+    }
+
+    private Set<String> handleAddDependencies(DependencyGroup group, Set<String> workingSelection) {
+        List<Dependency> notSelectedDeps = getNotSelectedDependencies(group, workingSelection);
+
+        List<SelectorItem<String>> addItems = notSelectedDeps.stream()
                 .map(dep -> SelectorItem.of(
-                        String.format("%-20s %s", dep.name(), dep.description() != null ? "(" + truncate(dep.description(), 40) + ")" : ""),
+                        String.format("%-20s %s", dep.name(),
+                                dep.description() != null ? "(" + truncate(dep.description(), 40) + ")" : ""),
                         dep.id()
                 ))
                 .collect(Collectors.toList());
 
-        MultiItemSelector<String, SelectorItem<String>> multiSelector = new MultiItemSelector<>(
+        MultiItemSelector<String, SelectorItem<String>> addSelector = new MultiItemSelector<>(
                 terminal,
-                items,
-                "Select dependencies for " + category + " (SPACE to toggle, ENTER to confirm):",
+                addItems,
+                "Select dependencies to ADD (SPACE to select, ENTER to confirm):",
                 null
         );
-        multiSelector.setResourceLoader(resourceLoader);
-        multiSelector.setTemplateExecutor(templateExecutor);
+        addSelector.setResourceLoader(resourceLoader);
+        addSelector.setTemplateExecutor(templateExecutor);
 
-        MultiItemSelector.MultiItemSelectorContext<String, SelectorItem<String>> context =
-                multiSelector.run(MultiItemSelector.MultiItemSelectorContext.empty());
+        MultiItemSelector.MultiItemSelectorContext<String, SelectorItem<String>> addContext =
+                addSelector.run(MultiItemSelector.MultiItemSelectorContext.empty());
 
-        Set<String> selectedIdsInThisRun = context.getResultItems().stream()
+        Set<String> addedIds = addContext.getResultItems().stream()
                 .map(SelectorItem::getItem)
                 .collect(Collectors.toSet());
 
-        Set<String> allIdsInGroup = group.dependencies().stream().map(Dependency::id).collect(Collectors.toSet());
-
-        workingSelection.removeIf(allIdsInGroup::contains);
-        workingSelection.addAll(selectedIdsInThisRun);
-
+        workingSelection.addAll(addedIds);
         return workingSelection;
+    }
+
+    private Set<String> handleRemoveDependencies(DependencyGroup group, Set<String> workingSelection) {
+        List<Dependency> selectedDeps = getSelectedDependencies(group, workingSelection);
+
+        List<SelectorItem<String>> removeItems = selectedDeps.stream()
+                .map(dep -> SelectorItem.of(
+                        String.format("%-20s %s", dep.name(),
+                                dep.description() != null ? "(" + truncate(dep.description(), 40) + ")" : ""),
+                        dep.id()
+                ))
+                .collect(Collectors.toList());
+
+        MultiItemSelector<String, SelectorItem<String>> removeSelector = new MultiItemSelector<>(
+                terminal,
+                removeItems,
+                "Select dependencies to REMOVE (SPACE to select, ENTER to confirm):",
+                null
+        );
+        removeSelector.setResourceLoader(resourceLoader);
+        removeSelector.setTemplateExecutor(templateExecutor);
+
+        MultiItemSelector.MultiItemSelectorContext<String, SelectorItem<String>> removeContext =
+                removeSelector.run(MultiItemSelector.MultiItemSelectorContext.empty());
+
+        Set<String> removedIds = removeContext.getResultItems().stream()
+                .map(SelectorItem::getItem)
+                .collect(Collectors.toSet());
+
+        workingSelection.removeAll(removedIds);
+        return workingSelection;
+    }
+
+    private void showUpdatedSelection(String category, DependencyGroup group, Set<String> workingSelection) {
+        Set<String> finalSelectedIds = getSelectedIdsInGroup(group, workingSelection);
+
+        consoleService.printInfo("\n  " + BOLD + "Updated selection in " + category + ":" + RESET);
+        if (finalSelectedIds.isEmpty()) {
+            consoleService.printInfo("    " + YELLOW + "No dependencies selected" + RESET);
+        } else {
+            finalSelectedIds.forEach(id -> {
+                String depName = getDependencyName(group, id);
+                consoleService.printInfo("    " + GREEN + "✓ " + depName + RESET);
+            });
+        }
+    }
+
+    private Set<String> getSelectedIdsInGroup(DependencyGroup group, Set<String> workingSelection) {
+        return group.dependencies().stream()
+                .map(Dependency::id)
+                .filter(workingSelection::contains)
+                .collect(Collectors.toSet());
+    }
+
+    private List<Dependency> getSelectedDependencies(DependencyGroup group, Set<String> workingSelection) {
+        return group.dependencies().stream()
+                .filter(dep -> workingSelection.contains(dep.id()))
+                .collect(Collectors.toList());
+    }
+
+    private List<Dependency> getNotSelectedDependencies(DependencyGroup group, Set<String> workingSelection) {
+        return group.dependencies().stream()
+                .filter(dep -> !workingSelection.contains(dep.id()))
+                .collect(Collectors.toList());
+    }
+
+    private String getDependencyName(DependencyGroup group, String id) {
+        return group.dependencies().stream()
+                .filter(d -> d.id().equals(id))
+                .findFirst()
+                .map(Dependency::name)
+                .orElse(id);
     }
 
     private String truncate(String str, int maxWidth) {

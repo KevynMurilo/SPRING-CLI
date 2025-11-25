@@ -88,6 +88,11 @@ public class UtilityCommands {
         }
     }
 
+    @ShellMethod(key = "clear", value = "Clear the terminal screen")
+    public void clear() {
+        consoleService.clearScreen();
+    }
+
     @ShellMethod(key = "version", value = "Show CLI version")
     public void version() {
         consoleService.printInfo("\nSpring CLI v1.0.0");
