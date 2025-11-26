@@ -101,12 +101,11 @@ public class ProjectGeneratorService {
                         entry -> resolvePackagePath(context.packageName(), entry.getValue())
                 ));
 
-        // Fallbacks bidirecionais para compatibilidade entre arquiteturas
         packageMap.putIfAbsent("service", packageMap.get("usecase"));
         packageMap.putIfAbsent("usecase", packageMap.get("service"));
         packageMap.putIfAbsent("repository-jpa", packageMap.get("repository-impl"));
-        packageMap.putIfAbsent("repository", packageMap.get("port-out"));  // Para HEXAGONAL/CLEAN usar templates com 'repository'
-        packageMap.putIfAbsent("port-out", packageMap.get("repository"));  // Para MVC/LAYERED usar templates com 'port-out'
+        packageMap.putIfAbsent("repository", packageMap.get("port-out"));
+        packageMap.putIfAbsent("port-out", packageMap.get("repository"));
 
         fileProps.put("pkg", packageMap);
 
@@ -159,17 +158,23 @@ public class ProjectGeneratorService {
         Path gradleKtsPath = projectRoot.resolve("build.gradle.kts");
 
         if (Files.exists(pomPath)) {
+            log.info("Enhancing Maven pom.xml with complete auto-configuration");
             String pomContent = fileSystemService.readFile(pomPath);
-            String modifiedPom = pomManipulationService.injectDependencies(pomContent, config.features(), config.springBootVersion());
-            fileSystemService.writeFile(pomPath, modifiedPom);
+            String enhancedPom = pomManipulationService.enhancePomFile(pomContent, config);
+            fileSystemService.writeFile(pomPath, enhancedPom);
+            log.info("Maven pom.xml enhanced successfully");
         } else if (Files.exists(gradlePath)) {
+            log.info("Enhancing Gradle build.gradle with complete auto-configuration");
             String gradleContent = fileSystemService.readFile(gradlePath);
-            String modifiedGradle = gradleManipulationService.injectDependencies(gradleContent, config.features(), config.springBootVersion());
-            fileSystemService.writeFile(gradlePath, modifiedGradle);
+            String enhancedGradle = gradleManipulationService.enhanceGradleFile(gradleContent, config);
+            fileSystemService.writeFile(gradlePath, enhancedGradle);
+            log.info("Gradle build.gradle enhanced successfully");
         } else if (Files.exists(gradleKtsPath)) {
+            log.info("Enhancing Gradle build.gradle.kts with complete auto-configuration");
             String gradleContent = fileSystemService.readFile(gradleKtsPath);
-            String modifiedGradle = gradleManipulationService.injectDependencies(gradleContent, config.features(), config.springBootVersion());
-            fileSystemService.writeFile(gradleKtsPath, modifiedGradle);
+            String enhancedGradle = gradleManipulationService.enhanceGradleFile(gradleContent, config);
+            fileSystemService.writeFile(gradleKtsPath, enhancedGradle);
+            log.info("Gradle build.gradle.kts enhanced successfully");
         }
     }
 

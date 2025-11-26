@@ -1,10 +1,15 @@
 package com.springcli.service;
 
+import com.springcli.model.ProjectConfig;
 import com.springcli.model.ProjectFeatures;
 import com.springcli.service.DependencyVersionResolver.LibraryVersions;
+import com.springcli.service.config.BuildPluginConfigurationService;
+import com.springcli.service.config.BuildPluginConfigurationService.MavenPlugin;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Slf4j
 @Service
@@ -12,53 +17,98 @@ import org.springframework.stereotype.Service;
 public class PomManipulationService {
 
     private final DependencyVersionResolver versionResolver;
+    private final BuildPluginConfigurationService pluginConfigService;
 
-    public String injectDependencies(String pomContent, ProjectFeatures features, String springBootVersion) {
-        LibraryVersions versions = versionResolver.resolveVersions(springBootVersion);
+    public String enhancePomFile(String pomContent, ProjectConfig config) {
+        log.info("Enhancing pom.xml with complete auto-configuration");
 
-        StringBuilder result = new StringBuilder(pomContent);
+        LibraryVersions versions = versionResolver.resolveVersions(config.springBootVersion());
+        ProjectFeatures features = config.features();
 
-        result = new StringBuilder(ensureSpringBootBom(result.toString(), springBootVersion));
+        String enhanced = pomContent;
+        enhanced = ensureProperties(enhanced, config.javaVersion(), versions);
+        enhanced = ensureSpringBootBom(enhanced, config.springBootVersion());
+        enhanced = injectFeatureDependencies(enhanced, features, versions);
+        enhanced = ensurePluginsSection(enhanced);
+        enhanced = injectPlugins(enhanced, config);
+        enhanced = cleanupWhitespace(enhanced);
 
-        int dependenciesEnd = findDependenciesEndTag(result.toString());
-        if (dependenciesEnd == -1) {
-            log.warn("Could not find </dependencies> tag in pom.xml");
-            return result.toString();
-        }
-
-        StringBuilder injections = new StringBuilder();
-
-        if (features.enableJwt()) {
-            injections.append(getJwtDependencies(versions.jjwtVersion()));
-        }
-
-        if (features.enableSwagger()) {
-            injections.append(getSwaggerDependency(versions.springDocVersion()));
-        }
-
-        if (features.enableMapStruct()) {
-            injections.append(getMapStructDependency(versions.mapStructVersion()));
-        }
-
-        if (injections.length() > 0) {
-            result.insert(dependenciesEnd, injections.toString());
-        }
-
-        if (features.enableMapStruct()) {
-            result = new StringBuilder(injectMapStructProcessor(result.toString(), versions.mapStructVersion()));
-        }
-
-        return result.toString();
+        log.info("Pom.xml enhancement completed successfully");
+        return enhanced;
     }
 
-    private int findDependenciesEndTag(String pom) {
-        return pom.indexOf("</dependencies>");
+    private String ensureProperties(String pomContent, String javaVersion, LibraryVersions versions) {
+        if (pomContent.contains("<properties>")) {
+            int propertiesEnd = pomContent.indexOf("</properties>");
+            if (propertiesEnd != -1) {
+                int propertiesStart = pomContent.indexOf("<properties>") + "<properties>".length();
+                String existingProps = pomContent.substring(propertiesStart, propertiesEnd);
+
+                if (existingProps.contains("<java.version>")) {
+                    pomContent = pomContent.replaceAll("<java.version>.*?</java.version>", "<java.version>" + javaVersion + "</java.version>");
+                }
+                if (existingProps.contains("<maven.compiler.source>")) {
+                    pomContent = pomContent.replaceAll("<maven.compiler.source>.*?</maven.compiler.source>", "<maven.compiler.source>" + javaVersion + "</maven.compiler.source>");
+                }
+                if (existingProps.contains("<maven.compiler.target>")) {
+                    pomContent = pomContent.replaceAll("<maven.compiler.target>.*?</maven.compiler.target>", "<maven.compiler.target>" + javaVersion + "</maven.compiler.target>");
+                }
+
+                if (!existingProps.contains("<lombok.version>")) {
+                    String newProps = "\n\t\t<lombok.version>1.18.36</lombok.version>";
+                    pomContent = pomContent.substring(0, propertiesEnd) + newProps + pomContent.substring(propertiesEnd);
+                }
+            }
+        } else {
+            String properties = generatePropertiesSection(javaVersion, versions);
+            int projectEnd = pomContent.indexOf("</project>");
+            if (projectEnd != -1) {
+                int dependenciesStart = pomContent.indexOf("<dependencies>");
+                if (dependenciesStart != -1) {
+                    return pomContent.substring(0, dependenciesStart) + properties + pomContent.substring(dependenciesStart);
+                }
+                return pomContent.substring(0, projectEnd) + properties + pomContent.substring(projectEnd);
+            }
+        }
+        return pomContent;
+    }
+
+    private String generatePropertiesSection(String javaVersion, LibraryVersions versions) {
+        return """
+                    <properties>
+                        <java.version>%s</java.version>
+                        <maven.compiler.source>%s</maven.compiler.source>
+                        <maven.compiler.target>%s</maven.compiler.target>
+                        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+                        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+                        <lombok.version>1.18.36</lombok.version>
+                    </properties>
+                """.formatted(javaVersion, javaVersion, javaVersion);
     }
 
     private String ensureSpringBootBom(String pomContent, String springBootVersion) {
-        if (pomContent.contains("<dependencyManagement>")) {
-            log.debug("dependencyManagement section already exists");
+        if (pomContent.contains("spring-boot-dependencies") && pomContent.contains("<dependencyManagement>")) {
+            log.debug("Spring Boot BOM already exists in dependencyManagement");
             return pomContent;
+        }
+
+        if (pomContent.contains("<dependencyManagement>")) {
+            int dmEnd = pomContent.indexOf("</dependencyManagement>");
+            int depsEnd = pomContent.lastIndexOf("</dependencies>", dmEnd);
+
+            if (depsEnd != -1 && depsEnd < dmEnd) {
+                String bomDependency = """
+                            <dependency>
+                                <groupId>org.springframework.boot</groupId>
+                                <artifactId>spring-boot-dependencies</artifactId>
+                                <version>%s</version>
+                                <type>pom</type>
+                                <scope>import</scope>
+                            </dependency>
+                    """.formatted(springBootVersion);
+
+                return pomContent.substring(0, depsEnd) + bomDependency + pomContent.substring(depsEnd);
+            }
         }
 
         String bomSection = """
@@ -83,6 +133,132 @@ public class PomManipulationService {
 
         log.warn("Could not find <dependencies> tag to inject BOM");
         return pomContent;
+    }
+
+    private String injectFeatureDependencies(String pomContent, ProjectFeatures features, LibraryVersions versions) {
+        int lastDependenciesEnd = findLastDependenciesEndTag(pomContent);
+        if (lastDependenciesEnd == -1) {
+            log.warn("Could not find main </dependencies> tag in pom.xml");
+            return pomContent;
+        }
+
+        StringBuilder injections = new StringBuilder();
+
+        if (features.enableJwt()) {
+            injections.append(getJwtDependencies(versions.jjwtVersion()));
+        }
+
+        if (features.enableSwagger()) {
+            injections.append(getSwaggerDependency(versions.springDocVersion()));
+        }
+
+        if (features.enableMapStruct()) {
+            injections.append(getMapStructDependency(versions.mapStructVersion()));
+        }
+
+        if (injections.length() > 0) {
+            return pomContent.substring(0, lastDependenciesEnd) + injections + pomContent.substring(lastDependenciesEnd);
+        }
+
+        return pomContent;
+    }
+
+    private int findLastDependenciesEndTag(String pomContent) {
+        int buildStart = pomContent.indexOf("<build>");
+        if (buildStart == -1) {
+            buildStart = pomContent.length();
+        }
+
+        int dependencyManagementStart = pomContent.indexOf("<dependencyManagement>");
+
+        int searchStart = 0;
+        if (dependencyManagementStart != -1) {
+            int dependencyManagementEnd = pomContent.indexOf("</dependencyManagement>", dependencyManagementStart);
+            if (dependencyManagementEnd != -1) {
+                searchStart = dependencyManagementEnd;
+            }
+        }
+
+        int dependenciesEnd = pomContent.indexOf("</dependencies>", searchStart);
+
+        if (dependenciesEnd == -1 || dependenciesEnd > buildStart) {
+            return -1;
+        }
+
+        return dependenciesEnd;
+    }
+
+    private String ensurePluginsSection(String pomContent) {
+        if (!pomContent.contains("<build>")) {
+            String buildSection = """
+
+                        <build>
+                            <plugins>
+                            </plugins>
+                        </build>
+                    """;
+
+            int projectEnd = pomContent.indexOf("</project>");
+            if (projectEnd != -1) {
+                return pomContent.substring(0, projectEnd) + buildSection + pomContent.substring(projectEnd);
+            }
+        } else if (!pomContent.contains("<plugins>")) {
+            String pluginsSection = """
+                            <plugins>
+                            </plugins>
+                    """;
+
+            int buildEnd = pomContent.indexOf("</build>");
+            if (buildEnd != -1) {
+                return pomContent.substring(0, buildEnd) + pluginsSection + pomContent.substring(buildEnd);
+            }
+        }
+
+        return pomContent;
+    }
+
+    private String injectPlugins(String pomContent, ProjectConfig config) {
+        List<MavenPlugin> plugins = pluginConfigService.generateMavenPlugins(
+                config.springBootVersion(),
+                config.dependencies(),
+                config.features()
+        );
+
+        int pluginsEnd = pomContent.indexOf("</plugins>");
+        if (pluginsEnd == -1) {
+            log.warn("Could not find </plugins> tag in pom.xml");
+            return pomContent;
+        }
+
+        StringBuilder pluginsXml = new StringBuilder();
+        for (MavenPlugin plugin : plugins) {
+            if (!pomContent.contains("<artifactId>" + plugin.artifactId() + "</artifactId>")) {
+                pluginsXml.append("""
+                            <plugin>
+                                <groupId>%s</groupId>
+                                <artifactId>%s</artifactId>
+                                <version>%s</version>
+                %s            </plugin>
+                """.formatted(
+                        plugin.groupId(),
+                        plugin.artifactId(),
+                        plugin.version(),
+                        plugin.configuration() != null ? plugin.configuration() : ""
+                ));
+            }
+        }
+
+        if (pluginsXml.length() > 0) {
+            return pomContent.substring(0, pluginsEnd) + pluginsXml + pomContent.substring(pluginsEnd);
+        }
+
+        return pomContent;
+    }
+
+    private String cleanupWhitespace(String pomContent) {
+        return pomContent
+                .replaceAll("\n{3,}", "\n\n")
+                .replaceAll("\t{2,}", "\t");
     }
 
     private String getJwtDependencies(String jjwtVersion) {
@@ -125,79 +301,5 @@ public class PomManipulationService {
                         <version>%s</version>
                     </dependency>
                 """.formatted(mapStructVersion);
-    }
-
-    private String injectMapStructProcessor(String pomContent, String mapStructVersion) {
-        if (pomContent.contains("<annotationProcessorPaths>")) {
-            String processorPath = """
-                                        <path>
-                                            <groupId>org.mapstruct</groupId>
-                                            <artifactId>mapstruct-processor</artifactId>
-                                            <version>%s</version>
-                                        </path>
-                    """.formatted(mapStructVersion);
-
-            int processorPathsEnd = pomContent.indexOf("</annotationProcessorPaths>");
-            if (processorPathsEnd != -1) {
-                return pomContent.substring(0, processorPathsEnd) + processorPath + pomContent.substring(processorPathsEnd);
-            }
-        } else {
-            return injectMapStructPluginConfiguration(pomContent, mapStructVersion);
-        }
-
-        return pomContent;
-    }
-
-    private String injectMapStructPluginConfiguration(String pomContent, String mapStructVersion) {
-        LibraryVersions versions = versionResolver.resolveVersions(extractSpringBootVersionFromPom(pomContent));
-
-        String mapStructPlugin = """
-                <build>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.apache.maven.plugins</groupId>
-                            <artifactId>maven-compiler-plugin</artifactId>
-                            <version>%s</version>
-                            <configuration>
-                                <annotationProcessorPaths>
-                                    <path>
-                                        <groupId>org.mapstruct</groupId>
-                                        <artifactId>mapstruct-processor</artifactId>
-                                        <version>%s</version>
-                                    </path>
-                                    <path>
-                                        <groupId>org.projectlombok</groupId>
-                                        <artifactId>lombok</artifactId>
-                                        <version>${lombok.version}</version>
-                                    </path>
-                                    <path>
-                                        <groupId>org.projectlombok</groupId>
-                                        <artifactId>lombok-mapstruct-binding</artifactId>
-                                        <version>%s</version>
-                                    </path>
-                                </annotationProcessorPaths>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </build>
-                """.formatted(versions.mavenCompilerPluginVersion(), mapStructVersion, versions.lombokMapstructBindingVersion());
-
-        int projectEnd = pomContent.indexOf("</project>");
-        if (projectEnd != -1) {
-            return pomContent.substring(0, projectEnd) + mapStructPlugin + pomContent.substring(projectEnd);
-        }
-
-        return pomContent;
-    }
-
-    private String extractSpringBootVersionFromPom(String pomContent) {
-        int versionStart = pomContent.indexOf("<version>", pomContent.indexOf("spring-boot-dependencies"));
-        if (versionStart == -1) return null;
-
-        versionStart += 9;
-        int versionEnd = pomContent.indexOf("</version>", versionStart);
-        if (versionEnd == -1) return null;
-
-        return pomContent.substring(versionStart, versionEnd);
     }
 }
