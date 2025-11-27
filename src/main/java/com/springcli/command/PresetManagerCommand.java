@@ -278,17 +278,17 @@ public class PresetManagerCommand {
             consoleService.printWarning("No presets available.");
         }
 
-        System.out.println();
+        consoleService.printInfo("");
         waitForKeyPress();
     }
 
     private void displayPresetListItem(Preset preset) {
-        System.out.printf("  • %-20s │ %-15s │ Java %-2s │ %2d deps\n",
+        consoleService.printInfo(String.format("  • %-20s │ %-15s │ Java %-2s │ %2d deps",
                 preset.name(),
                 preset.architecture().name(),
                 preset.javaVersion(),
-                preset.dependencies().size());
-        System.out.printf("    %s\n", preset.description());
+                preset.dependencies().size()));
+        consoleService.printMuted(String.format("    %s", preset.description()));
     }
 
     private void displayPresetSummary(Preset preset) {

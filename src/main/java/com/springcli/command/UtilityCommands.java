@@ -47,10 +47,10 @@ public class UtilityCommands {
         presets.forEach(preset -> {
             String badge = preset.builtIn() ? "[BUILT-IN]" : "[CUSTOM]";
             consoleService.printInfo("\n  " + badge + " " + preset.name());
-            System.out.println("    Description: " + preset.description());
-            System.out.println("    Architecture: " + preset.architecture().getDisplayName());
-            System.out.println("    Java Version: " + preset.javaVersion());
-            System.out.println("    Dependencies: " + String.join(", ", preset.dependencies()));
+            consoleService.printInfo("    Description: " + preset.description());
+            consoleService.printInfo("    Architecture: " + preset.architecture().getDisplayName());
+            consoleService.printInfo("    Java Version: " + preset.javaVersion());
+            consoleService.printInfo("    Dependencies: " + String.join(", ", preset.dependencies()));
         });
 
         consoleService.printSeparator();
@@ -62,13 +62,13 @@ public class UtilityCommands {
 
         consoleService.printInfo("\n Current Configuration:\n");
         consoleService.printSeparator();
-        System.out.println("  Default Group ID: " + config.defaultGroupId());
-        System.out.println("  Default Java Version: " + config.defaultJavaVersion());
-        System.out.println("  Default Packaging: " + config.defaultPackaging());
-        System.out.println("  Default Architecture: " + config.defaultArchitecture().getDisplayName());
-        System.out.println("  Default Output Dir: " + config.defaultOutputDir());
-        System.out.println("  Auto Open IDE: " + config.autoOpenIde());
-        System.out.println("  Preferred IDE: " + config.preferredIde());
+        consoleService.printInfo("  Default Group ID: " + config.defaultGroupId());
+        consoleService.printInfo("  Default Java Version: " + config.defaultJavaVersion());
+        consoleService.printInfo("  Default Packaging: " + config.defaultPackaging());
+        consoleService.printInfo("  Default Architecture: " + config.defaultArchitecture().getDisplayName());
+        consoleService.printInfo("  Default Output Dir: " + config.defaultOutputDir());
+        consoleService.printInfo("  Auto Open IDE: " + config.autoOpenIde());
+        consoleService.printInfo("  Preferred IDE: " + config.preferredIde());
         consoleService.printSeparator();
     }
 
@@ -116,10 +116,10 @@ public class UtilityCommands {
     public void info() {
         consoleService.printInfo("\n System Information:\n");
         consoleService.printSeparator();
-        System.out.println("  Java Version: " + System.getProperty("java.version"));
-        System.out.println("  OS: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
-        System.out.println("  User Home: " + System.getProperty("user.home"));
-        System.out.println("  Config Dir: " + System.getProperty("user.home") + "/.spring-cli");
+        consoleService.printInfo("  Java Version: " + System.getProperty("java.version"));
+        consoleService.printInfo("  OS: " + System.getProperty("os.name") + " " + System.getProperty("os.version"));
+        consoleService.printInfo("  User Home: " + System.getProperty("user.home"));
+        consoleService.printInfo("  Config Dir: " + System.getProperty("user.home") + "/.spring-cli");
         consoleService.printSeparator();
     }
 
