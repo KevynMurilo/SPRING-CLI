@@ -2,34 +2,33 @@
 <html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spring CLI - Professional Generator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Spring CLI - Generator</title>
+
+    <link rel="icon" type="image/png" href="icon.png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <script>
         tailwind.config = {
             darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        spring: {
-                            400: '#87cf3a', 500: '#6db33f', 600: '#5fa134',
-                            700: '#4a7d28', 900: '#2e4a1b',
-                        },
-                        dark: {
-                            800: '#1e1e2e', 900: '#11111b', 950: '#0b0b12'
-                        }
+                        spring: { 400: '#87cf3a', 500: '#6db33f', 600: '#5fa134', 900: '#1a2e05' },
+                        dark: { 800: '#1e1e2e', 900: '#11111b', 950: '#0b0b12' }
                     },
-                    animation: {
-                        'fade-in': 'fadeIn 0.3s ease-out',
-                        'slide-down': 'slideDown 0.3s ease-out'
-                    },
+                    animation: { 'shake': 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both' },
                     keyframes: {
-                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
-                        slideDown: { '0%': { transform: 'translateY(-10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+                        shake: {
+                            '10%, 90%': { transform: 'translate3d(-1px, 0, 0)' },
+                            '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
+                            '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
+                            '40%, 60%': { transform: 'translate3d(4px, 0, 0)' }
+                        }
                     }
                 }
             }
@@ -37,51 +36,69 @@
     </script>
 
     <style>
-        /* Custom Scrollbar */
+        /* Scrollbar Fina e Elegante */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-        .dark ::-webkit-scrollbar-thumb { background: #374151; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #52525b; }
 
-        /* Smooth Accordion */
-        .accordion-content { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 2000px; overflow: hidden; }
-        .accordion-content.collapsed { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; }
+        /* Glassmorphism & Background */
+        .bg-grid {
+            background-image: radial-gradient(#3f3f46 1px, transparent 1px);
+            background-size: 24px 24px;
+            opacity: 0.15;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .dark .glass {
+            background: rgba(17, 17, 27, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
 
-        /* Checkbox Custom Style */
-        .custom-checkbox:checked + div { background-color: #6db33f; border-color: #6db33f; }
-        .custom-checkbox:checked + div svg { display: block; }
+        /* Accordion Transitions */
+        .accordion-content { transition: all 0.3s ease-in-out; max-height: 2000px; opacity: 1; overflow: hidden; }
+        .accordion-content.collapsed { max-height: 0; opacity: 0; margin: 0; padding: 0; }
 
-        /* Dependency Item Selected State */
-        .dep-item.selected { border-color: #6db33f; background-color: rgba(109, 179, 63, 0.05); }
-        .dark .dep-item.selected { background-color: rgba(109, 179, 63, 0.1); }
+        /* Interactive Elements */
+        .selected-pill {
+            background-color: #6db33f !important;
+            color: white !important;
+            border-color: #6db33f !important;
+            box-shadow: 0 4px 12px rgba(109, 179, 63, 0.3);
+        }
+        .input-error { border-color: #ef4444 !important; animation: shake 0.4s; }
 
-        .spinner { border-top-color: #6db33f; animation: spin 1s linear infinite; }
-        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .spinner { border-top-color: #6db33f; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 
-<body class="bg-gray-50 dark:bg-dark-950 text-gray-800 dark:text-gray-200 font-sans transition-colors duration-300">
+<body class="bg-gray-50 dark:bg-[#09090b] text-gray-800 dark:text-gray-200 font-sans transition-colors duration-300 min-h-screen flex flex-col relative overflow-x-hidden">
 
-<nav class="sticky top-0 z-40 w-full bg-white/80 dark:bg-dark-900/80 backdrop-blur-lg border-b border-gray-200 dark:border-gray-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="fixed inset-0 bg-grid pointer-events-none z-0"></div>
+
+<nav class="sticky top-0 z-50 w-full glass border-b border-gray-200/50 dark:border-white/5">
+    <div class="mx-auto px-4 sm:px-6 lg:px-24">
         <div class="flex justify-between items-center h-16">
             <div class="flex items-center gap-3">
-                <div class="w-9 h-9 bg-gradient-to-tr from-spring-600 to-spring-400 rounded-lg flex items-center justify-center shadow-lg shadow-spring-500/20">
-                    <i class="fas fa-leaf text-white text-sm"></i>
+                <div class="w-10 h-10 bg-gradient-to-br from-spring-500 to-spring-700 rounded-xl flex items-center justify-center shadow-lg shadow-spring-500/20 transform hover:scale-105 transition-transform duration-200">
+                    <i class="fas fa-leaf text-white text-lg"></i>
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg tracking-tight text-gray-900 dark:text-white leading-tight">Spring CLI</h1>
-                    <p class="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Generator</p>
+                    <h1 class="font-extrabold text-xl tracking-tight text-gray-900 dark:text-white leading-none">Spring<span class="text-spring-500">CLI</span></h1>
+                    <p class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Generator</p>
                 </div>
             </div>
-
             <div class="flex items-center gap-3">
-                <button id="themeToggle" class="p-2.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-dark-800 transition-colors">
+                <button id="themeToggle" class="w-10 h-10 rounded-xl flex items-center justify-center bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 transition-all focus:outline-none">
                     <i class="fas fa-moon dark:hidden"></i>
                     <i class="fas fa-sun hidden dark:block text-yellow-400"></i>
                 </button>
-                <a href="https://github.com/KevynMurilo/spring-cli" target="_blank" class="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 transition text-sm font-semibold">
+                <a href="https://github.com/KevynMurilo/spring-cli" target="_blank" class="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 transition font-semibold shadow-lg">
                     <i class="fab fa-github"></i>
                     <span>GitHub</span>
                 </a>
@@ -90,100 +107,108 @@
     </div>
 </nav>
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+<div class="flex-grow mx-auto px-4 sm:px-6 lg:px-24 py-8 w-full z-10 relative">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-        <div class="lg:col-span-4 space-y-6">
+        <div class="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
 
-            <div class="bg-white dark:bg-dark-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
-                <div class="flex items-center gap-2 mb-5">
-                    <div class="w-1 h-5 bg-spring-500 rounded-full"></div>
-                    <h2 class="font-bold text-gray-900 dark:text-white">Project Metadata</h2>
+            <div class="glass rounded-3xl p-6 shadow-xl shadow-gray-200/50 dark:shadow-black/30">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-white/5">
+                    <div class="w-8 h-8 rounded-full bg-spring-100 dark:bg-spring-900/30 text-spring-600 flex items-center justify-center">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <h2 class="font-bold text-base uppercase tracking-wide text-gray-900 dark:text-white">Metadata</h2>
                 </div>
 
                 <div class="space-y-4">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="col-span-2 sm:col-span-1">
-                            <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">Group</label>
-                            <input type="text" id="groupId" value="com.example" class="w-full bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-spring-500/50 focus:border-spring-500 outline-none transition-all">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Group</label>
+                            <input type="text" id="groupId" value="com.example" class="w-full bg-gray-50 dark:bg-[#15151e] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-spring-500 focus:border-transparent outline-none transition-all font-mono text-gray-700 dark:text-gray-300">
                         </div>
-                        <div class="col-span-2 sm:col-span-1">
-                            <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">Artifact</label>
-                            <input type="text" id="artifactId" value="demo" class="w-full bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-spring-500/50 focus:border-spring-500 outline-none transition-all">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Artifact</label>
+                            <input type="text" id="artifactId" value="demo" class="w-full bg-gray-50 dark:bg-[#15151e] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-spring-500 focus:border-transparent outline-none transition-all font-mono text-gray-700 dark:text-gray-300">
                         </div>
                     </div>
 
                     <div>
-                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">Name</label>
-                        <input type="text" id="projectName" value="demo" class="w-full bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-spring-500/50 focus:border-spring-500 outline-none transition-all">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Name</label>
+                        <div class="relative">
+                            <input type="text" id="projectName" value="demo" class="w-full pl-9 bg-gray-50 dark:bg-[#15151e] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-spring-500 focus:border-transparent outline-none transition-all">
+                            <i class="fas fa-tag absolute left-3.5 top-3 text-gray-400 text-xs"></i>
+                        </div>
                     </div>
 
                     <div>
-                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">Description</label>
-                        <input type="text" id="description" value="Demo project for Spring Boot" class="w-full bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm focus:ring-2 focus:ring-spring-500/50 focus:border-spring-500 outline-none transition-all">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Description</label>
+                        <input type="text" id="description" value="Demo project for Spring Boot" class="w-full bg-gray-50 dark:bg-[#15151e] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-spring-500 focus:border-transparent outline-none transition-all">
                     </div>
 
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">Package Name</label>
-                        <input type="text" id="packageName" value="com.example.demo" readonly class="w-full bg-gray-100 dark:bg-dark-950/50 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm font-mono text-gray-500 cursor-not-allowed">
+                    <div class="pt-2">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Package</label>
+                            <span class="text-[10px] text-spring-500 cursor-pointer hover:underline font-semibold opacity-80" onclick="updatePackageName()">Auto-update</span>
+                        </div>
+                        <input type="text" id="packageName" value="com.example.demo" readonly class="w-full bg-gray-100 dark:bg-black/30 border border-gray-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-gray-500 cursor-not-allowed select-all">
                     </div>
-
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 block">Output Path (Local)</label>
-                        <input type="text" id="outputPath" placeholder="C:/projects" class="w-full bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2.5 text-sm font-mono focus:ring-2 focus:ring-spring-500/50 focus:border-spring-500 outline-none transition-all">
-                    </div>
+                    <input type="hidden" id="outputPath" value="project.zip">
                 </div>
             </div>
 
-            <div class="bg-white dark:bg-dark-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
-                <div class="flex items-center gap-2 mb-5">
-                    <div class="w-1 h-5 bg-spring-500 rounded-full"></div>
-                    <h2 class="font-bold text-gray-900 dark:text-white">Tech Stack</h2>
+            <div class="glass rounded-3xl p-6 shadow-xl shadow-gray-200/50 dark:shadow-black/30">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-white/5">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <h2 class="font-bold text-base uppercase tracking-wide text-gray-900 dark:text-white">Tech Stack</h2>
                 </div>
 
                 <div class="space-y-5">
                     <div>
-                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Build Tool</label>
-                        <div id="buildToolContainer" class="flex p-1 bg-gray-100 dark:bg-dark-800 rounded-xl">
-                            <div class="w-full h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Build System</label>
+                        <div id="buildToolContainer" class="grid gap-2">
+                            <div class="h-10 bg-gray-100 dark:bg-white/5 rounded-xl animate-pulse w-full"></div>
                         </div>
                         <input type="hidden" id="buildTool">
                     </div>
 
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Java Version</label>
-                        <div id="javaVersionContainer" class="flex flex-wrap gap-2">
-                            <div class="w-full h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Java Version</label>
+                            <div id="javaVersionContainer" class="flex flex-wrap gap-2">
+                                <div class="h-8 w-full bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse"></div>
+                            </div>
+                            <input type="hidden" id="javaVersion">
                         </div>
-                        <input type="hidden" id="javaVersion">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Spring Boot</label>
+                            <div id="bootVersionContainer" class="flex flex-wrap gap-2">
+                                <div class="h-8 w-full bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse"></div>
+                            </div>
+                            <input type="hidden" id="springBootVersion">
+                        </div>
                     </div>
 
                     <div>
-                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Spring Boot</label>
-                        <div id="bootVersionContainer" class="flex flex-wrap gap-2">
-                            <div class="w-full h-8 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
-                        </div>
-                        <input type="hidden" id="springBootVersion">
-                    </div>
-
-                    <div>
-                        <label class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2 block">Architecture Pattern</label>
-                        <div class="relative">
-                            <select id="architecture" class="appearance-none w-full bg-gray-50 dark:bg-dark-800 border border-gray-200 dark:border-gray-700 rounded-lg pl-3 pr-10 py-2.5 text-sm focus:ring-2 focus:ring-spring-500/50 outline-none cursor-pointer">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Architecture Pattern</label>
+                        <div class="relative group">
+                            <i class="fas fa-sitemap absolute left-3.5 top-3.5 text-gray-400 text-xs z-10"></i>
+                            <select id="architecture" class="appearance-none w-full bg-gray-50 dark:bg-[#15151e] border border-gray-200 dark:border-white/10 rounded-xl pl-9 pr-10 py-3 text-sm focus:ring-2 focus:ring-spring-500 outline-none cursor-pointer transition-all text-gray-700 dark:text-gray-200 font-medium hover:border-spring-400">
                                 <option>Loading...</option>
                             </select>
                             <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                                <i class="fas fa-chevron-down text-xs"></i>
+                                <i class="fas fa-chevron-down text-xs group-hover:text-spring-500 transition-colors"></i>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <button onclick="submitForm()" class="group w-full relative overflow-hidden bg-gradient-to-r from-spring-600 to-spring-500 hover:from-spring-500 hover:to-spring-400 text-white font-bold py-4 rounded-xl shadow-lg shadow-spring-500/30 transition-all active:scale-[0.98]">
-                    <span class="relative z-10 flex items-center justify-center gap-2">
+            <button onclick="validateAndSubmit()" class="hidden lg:flex w-full relative overflow-hidden bg-gradient-to-r from-spring-600 to-spring-500 hover:to-spring-400 text-white font-bold py-4 rounded-2xl shadow-lg shadow-spring-500/25 transition-all hover:-translate-y-1 active:translate-y-0 items-center justify-center gap-3 group">
+                    <span class="relative z-10 flex items-center gap-2 text-lg tracking-wide">
                         <i class="fas fa-rocket group-hover:animate-bounce"></i>
-                        GENERATE PROJECT
+                        Generate Project
                     </span>
                 <div class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
             </button>
@@ -191,106 +216,104 @@
 
         <div class="lg:col-span-8 space-y-6">
 
-            <div class="bg-white dark:bg-dark-900 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-800">
-                <div class="flex items-center justify-between mb-4">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center">
-                            <i class="fas fa-magic text-sm"></i>
-                        </div>
-                        <h2 class="font-bold text-gray-900 dark:text-white">Capabilities</h2>
+            <div class="glass rounded-3xl p-6 shadow-xl shadow-gray-200/50 dark:shadow-black/30">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center">
+                        <i class="fas fa-wand-magic-sparkles"></i>
                     </div>
+                    <h2 class="font-bold text-base uppercase tracking-wide text-gray-900 dark:text-white">Capabilities</h2>
                 </div>
 
-                <div id="featuresContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <div class="col-span-full py-4 text-center text-gray-400 text-sm animate-pulse">Loading features...</div>
+                <div id="featuresContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="col-span-full py-8 text-center text-gray-400 text-sm animate-pulse">Loading features...</div>
                 </div>
             </div>
 
-            <div class="bg-white dark:bg-dark-900 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col min-h-[500px]">
+            <div class="glass rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-black/30 overflow-hidden flex flex-col min-h-[600px] border border-white/20 dark:border-white/5">
 
-                <div class="p-6 border-b border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-dark-800/30">
-                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
-                        <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center">
-                                <i class="fas fa-cubes text-sm"></i>
+                <div class="p-6 border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02]">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 flex items-center justify-center">
+                                <i class="fas fa-cubes"></i>
                             </div>
                             <div>
-                                <h2 class="font-bold text-gray-900 dark:text-white leading-none">Dependencies</h2>
-                                <span class="text-xs text-gray-500 dark:text-gray-400" id="depCountLabel">0 selected</span>
+                                <h2 class="font-bold text-base text-gray-900 dark:text-white uppercase tracking-wide">Dependencies</h2>
+                                <p class="text-[10px] text-gray-500"><span id="depCountLabel" class="font-bold text-spring-500">0</span> Selected</p>
                             </div>
                         </div>
                     </div>
 
                     <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-search text-gray-400 group-focus-within:text-spring-500 transition-colors"></i>
-                        </div>
+                        <i class="fas fa-search absolute left-4 top-3.5 text-gray-400 group-focus-within:text-spring-500 transition-colors"></i>
                         <input type="text" id="dependencySearch"
-                               class="block w-full pl-10 pr-3 py-3 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white dark:bg-dark-950 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-spring-500/50 focus:border-spring-500 sm:text-sm transition-all shadow-sm"
+                               class="block w-full pl-11 pr-12 py-3.5 bg-white dark:bg-[#15151e] border border-gray-200 dark:border-white/10 rounded-2xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-spring-500 focus:border-transparent transition-all shadow-sm"
                                placeholder="Search dependencies (e.g. 'Web', 'Security', 'JPA')...">
                         <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                            <kbd class="hidden sm:inline-block border border-gray-200 dark:border-gray-700 rounded px-2 text-[10px] font-mono text-gray-400">CTRL + K</kbd>
+                            <kbd class="hidden sm:inline-flex items-center justify-center h-6 px-2 text-[10px] font-mono font-bold text-gray-400 bg-gray-100 dark:bg-white/5 rounded border border-gray-200 dark:border-white/5">CTRL K</kbd>
                         </div>
                     </div>
                 </div>
 
-                <div id="dependenciesArea" class="divide-y divide-gray-100 dark:divide-gray-800/50">
-                    <div class="text-center py-12">
-                        <div class="inline-block animate-spin w-6 h-6 border-2 border-spring-500 border-t-transparent rounded-full mb-2"></div>
-                        <p class="text-sm text-gray-500">Loading ecosystem...</p>
+                <div id="dependenciesArea" class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                    <div class="text-center py-20">
+                        <div class="inline-block animate-spin w-8 h-8 border-4 border-gray-200 border-t-spring-500 rounded-full mb-4"></div>
+                        <p class="text-sm text-gray-500 font-medium">Loading ecosystem...</p>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 </div>
 
-<div id="loadingOverlay" class="hidden fixed inset-0 bg-white/80 dark:bg-dark-950/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center transition-opacity duration-300">
+<div class="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-white/90 dark:bg-[#09090b]/95 backdrop-blur-xl border-t border-gray-200 dark:border-white/10 z-40">
+    <button onclick="validateAndSubmit()" class="w-full bg-gradient-to-r from-spring-600 to-spring-500 text-white font-bold py-4 rounded-2xl shadow-lg shadow-spring-500/20 flex items-center justify-center gap-2 active:scale-95 transition-transform">
+        <i class="fas fa-rocket"></i> Generate Project
+    </button>
+</div>
+
+<div id="toast" class="fixed top-5 right-5 transform translate-x-[120%] transition-transform duration-300 z-50 bg-white dark:bg-dark-800 border-l-4 rounded-xl shadow-2xl flex items-center gap-4 p-4 min-w-[320px] max-w-sm">
+    <div id="toastIcon" class="flex-shrink-0"></div>
+    <div>
+        <h4 id="toastTitle" class="font-bold text-sm text-gray-900 dark:text-white">Notification</h4>
+        <p id="toastMessage" class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Message content</p>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="hidden fixed inset-0 bg-white/90 dark:bg-[#09090b]/90 backdrop-blur-md z-50 flex flex-col items-center justify-center transition-all duration-300">
     <div class="relative">
-        <div class="w-20 h-20 border-4 border-gray-200 dark:border-gray-800 border-t-spring-500 rounded-full spinner"></div>
+        <div class="w-20 h-20 border-4 border-gray-200 dark:border-white/10 border-t-spring-500 rounded-full spinner"></div>
         <div class="absolute inset-0 flex items-center justify-center">
-            <i class="fas fa-leaf text-spring-500 text-xl animate-pulse"></i>
+            <i class="fas fa-leaf text-spring-500 text-2xl animate-pulse"></i>
         </div>
     </div>
-    <h3 class="mt-6 text-xl font-bold text-gray-900 dark:text-white">Generating Project</h3>
-    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Crafting your Spring application...</p>
+    <h3 class="mt-6 text-xl font-bold text-gray-900 dark:text-white tracking-tight">Generating Project</h3>
+    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1 animate-pulse">Please wait...</p>
 </div>
 
 <div id="resultModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
-    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeModal()"></div>
-    <div class="relative bg-white dark:bg-dark-900 rounded-2xl p-8 max-w-sm w-full shadow-2xl border border-gray-200 dark:border-gray-800 transform transition-all scale-100">
+    <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeModal()"></div>
+    <div class="relative bg-white dark:bg-[#15151e] rounded-3xl p-8 max-w-sm w-full shadow-2xl border border-gray-100 dark:border-white/10 transform transition-all scale-100">
         <div class="text-center">
-            <div id="resultIcon" class="mx-auto flex items-center justify-center h-16 w-16 rounded-full mb-6"></div>
-            <h3 id="resultTitle" class="text-2xl font-bold text-gray-900 dark:text-white"></h3>
-            <p id="resultText" class="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-8"></p>
-            <button onclick="closeModal()" class="w-full bg-gray-900 dark:bg-gray-800 hover:bg-gray-800 dark:hover:bg-gray-700 text-white font-bold py-3 rounded-xl transition">
-                Done
+            <div id="resultIcon" class="mx-auto flex items-center justify-center h-20 w-20 rounded-full mb-6 bg-gray-50 dark:bg-white/5"></div>
+            <h3 id="resultTitle" class="text-2xl font-bold text-gray-900 dark:text-white mb-2">Success</h3>
+            <p id="resultText" class="text-gray-600 dark:text-gray-300 mb-8 text-sm leading-relaxed"></p>
+            <button onclick="closeModal()" class="w-full bg-spring-600 hover:bg-spring-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-spring-500/20">
+                Close
             </button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- CONFIG ---
     const API_BASE = window.location.origin + '/api';
-    let metadataCache = null;
-    let availableFeatures = [];
 
-    // --- THEME LOGIC ---
+    // --- THEME SETUP ---
     const htmlElement = document.documentElement;
-    const themeBtn = document.getElementById('themeToggle');
-
-    function initTheme() {
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            htmlElement.classList.add('dark');
-        } else {
-            htmlElement.classList.remove('dark');
-        }
+    if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        htmlElement.classList.add('dark');
     }
-    initTheme();
-
-    themeBtn.addEventListener('click', () => {
+    document.getElementById('themeToggle').addEventListener('click', () => {
         htmlElement.classList.toggle('dark');
         localStorage.theme = htmlElement.classList.contains('dark') ? 'dark' : 'light';
     });
@@ -299,73 +322,124 @@
     function createPillSelector(containerId, inputId, items, defaultVal, labelKey, valKey) {
         const container = document.getElementById(containerId);
         const input = document.getElementById(inputId);
-        container.innerHTML = '';
+        container.innerHTML = ''; // Important: Clear previous items!
+
+        // Logic for grid layout based on item count
+        if(containerId === 'buildToolContainer') {
+            container.className = items.length > 2 ? 'grid grid-cols-2 gap-2' : 'grid grid-cols-2 gap-2';
+        }
 
         items.forEach((item, idx) => {
             const val = valKey ? item[valKey] : item;
             const label = labelKey ? item[labelKey] : item;
-            const isSelected = val === defaultVal || (!defaultVal && idx === 0);
 
-            if (isSelected && !input.value) input.value = val;
+            // Determine if active: matches input value OR (if input empty) matches default/first
+            const isActive = input.value ? (input.value === val) : (val === defaultVal || (!defaultVal && idx === 0));
+
+            if (isActive && !input.value) input.value = val;
 
             const btn = document.createElement('button');
             btn.type = 'button';
-            // Style for Build Tool (Full Width Tabs) vs Others (Tags)
+
+            // Styles
             if(containerId === 'buildToolContainer') {
-                btn.className = `flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${isSelected
-                    ? 'bg-white dark:bg-dark-600 text-spring-600 shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'}`;
+                // Build Tool Style (Full buttons)
+                btn.className = `w-full py-2.5 px-2 text-xs font-bold rounded-xl border transition-all duration-200 truncate ${isActive
+                    ? 'selected-pill border-transparent transform scale-[1.02]'
+                    : 'bg-white dark:bg-[#15151e] border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-spring-400 dark:hover:border-spring-500 hover:text-spring-600 dark:hover:text-spring-400'}`;
             } else {
-                btn.className = `px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${isSelected
-                    ? 'bg-spring-500 border-spring-500 text-white shadow-md shadow-spring-500/20'
-                    : 'bg-white dark:bg-dark-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:border-spring-400'
+                // Version Style (Small pills)
+                btn.className = `px-4 py-2 text-xs font-bold rounded-lg border transition-all duration-200 ${isActive
+                    ? 'selected-pill border-transparent'
+                    : 'bg-white dark:bg-[#15151e] border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:border-spring-400 hover:text-spring-500'
                 }`;
             }
 
             btn.textContent = label;
+            btn.title = label; // Tooltip for truncated text
             btn.onclick = () => {
                 input.value = val;
-                // Re-render to update classes
                 createPillSelector(containerId, inputId, items, val, labelKey, valKey);
             };
             container.appendChild(btn);
         });
     }
 
+    function updatePackageName() {
+        const g = document.getElementById('groupId').value.replace(/[^a-zA-Z0-9.]/g, "").toLowerCase();
+        const a = document.getElementById('artifactId').value.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+        document.getElementById('packageName').value = `${g}.${a}`;
+    }
+    document.getElementById('groupId').addEventListener('input', updatePackageName);
+    document.getElementById('artifactId').addEventListener('input', updatePackageName);
+
     // --- INITIALIZATION ---
     async function init() {
-        // Auto-update package name logic
-        const updatePkg = () => {
-            const g = document.getElementById('groupId').value.replace(/[^a-zA-Z0-9.]/g, "").toLowerCase();
-            const a = document.getElementById('artifactId').value.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
-            document.getElementById('packageName').value = `${g}.${a}`;
-        };
-        document.getElementById('groupId').addEventListener('input', updatePkg);
-        document.getElementById('artifactId').addEventListener('input', updatePkg);
-
-        // Shortcuts
         document.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
                 e.preventDefault();
                 document.getElementById('dependencySearch').focus();
             }
         });
-
         await Promise.all([loadOptions(), loadArchitectures(), loadFeatures(), loadMetadata()]);
     }
 
-    // --- DATA LOADING ---
+    // --- LOAD DATA ---
     async function loadOptions() {
         try {
             const res = await fetch(`${API_BASE}/options`);
             const data = await res.json();
 
-            createPillSelector('javaVersionContainer', 'javaVersion', data.javaVersions, '17');
-            createPillSelector('bootVersionContainer', 'springBootVersion', data.springBootVersions, data.springBootVersions[0]);
+            // 1. Process Build Tools (ALL of them, formatted nicely)
+            const buildTools = data.buildTools.map(tool => {
+                let val, label;
+                // Handle if backend sends objects or strings
+                if (typeof tool === 'string') {
+                    val = tool;
+                    label = tool;
+                } else {
+                    val = tool.val || tool.id || tool; // Adapting to potential backend formats
+                    label = tool.label || tool.name || tool;
+                }
 
-            const buildTools = data.buildTools.map(t => ({ val: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
-            createPillSelector('buildToolContainer', 'buildTool', buildTools, 'maven', 'label', 'val');
-        } catch(e) { console.error(e); }
+                // Formatting for display
+                let displayLabel = label.toLowerCase()
+                    .replace('-project', '')
+                    .replace('kotlin', 'Kotlin')
+                    .replace('groovy', 'Groovy');
+
+                // Capitalize first letter
+                displayLabel = displayLabel.charAt(0).toUpperCase() + displayLabel.slice(1);
+
+                // Add parenthesis for variants
+                if(displayLabel.includes('gradle') && !displayLabel.includes(' ')) {
+                     // Pure gradle usually means groovy in some contexts, or just generic
+                     displayLabel = "Gradle";
+                }
+                if(displayLabel.includes('maven')) displayLabel = "Maven";
+
+                // Manual Overrides for prettier labels if ID is standard
+                if(val === 'gradle-project-kotlin') displayLabel = 'Gradle (Kotlin)';
+                if(val === 'gradle-project') displayLabel = 'Gradle (Groovy)';
+                if(val === 'maven-project') displayLabel = 'Maven';
+
+                return { val: val, label: displayLabel };
+            });
+
+            // Remove duplicates based on value just in case
+            const uniqueBuildTools = [...new Map(buildTools.map(item => [item.val, item])).values()];
+
+            // Default to Maven if available
+            const defaultTool = uniqueBuildTools.find(t => t.val.includes('maven'))?.val || uniqueBuildTools[0].val;
+
+            createPillSelector('buildToolContainer', 'buildTool', uniqueBuildTools, defaultTool, 'label', 'val');
+
+            // 2. Versions
+            const validBootVersions = data.springBootVersions.filter(v => !v.startsWith('4.'));
+            createPillSelector('javaVersionContainer', 'javaVersion', data.javaVersions, '17');
+            createPillSelector('bootVersionContainer', 'springBootVersion', validBootVersions, validBootVersions[0]);
+
+        } catch(e) { console.error("Options Error", e); showToast('Error', 'Failed to load options.', 'error'); }
     }
 
     async function loadArchitectures() {
@@ -386,8 +460,8 @@
     async function loadFeatures() {
         try {
             const res = await fetch(`${API_BASE}/features`);
-            availableFeatures = await res.json();
-            renderFeatures(availableFeatures);
+            const data = await res.json();
+            renderFeatures(data);
         } catch(e) { console.error(e); }
     }
 
@@ -397,17 +471,15 @@
             const data = await res.json();
             renderDependencies(data.dependencyGroups);
         } catch(e) {
-            document.getElementById('dependenciesArea').innerHTML = `<div class="p-6 text-center text-red-500">Failed to load dependencies.</div>`;
+            document.getElementById('dependenciesArea').innerHTML = `<div class="p-10 text-center text-red-400 text-sm">Failed to load dependencies.</div>`;
         }
     }
 
     // --- RENDERERS ---
-
     function renderFeatures(features) {
         const container = document.getElementById('featuresContainer');
         container.innerHTML = '';
-
-        if(!features.length) return;
+        if(!features || !features.length) return;
 
         const iconMap = {
             'enableJwt': 'fa-shield-halved', 'enableSwagger': 'fa-code', 'enableCors': 'fa-globe',
@@ -417,24 +489,24 @@
         };
 
         features.forEach(f => {
-            const isHidden = f.id === 'enableJwt'; // Conditional logic handled later
+            const isHidden = f.id === 'enableJwt';
             const div = document.createElement('div');
-            div.className = `${isHidden ? 'hidden' : ''} feature-card relative`;
+            div.className = `${isHidden ? 'hidden' : ''} feature-card`;
             div.id = `feature-card-${f.id}`;
             div.innerHTML = `
-                <label class="cursor-pointer group block h-full">
+                <label class="cursor-pointer group block h-full relative">
                     <input type="checkbox" id="${f.id}" class="peer sr-only">
-                    <div class="h-full p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-dark-800/50 hover:border-spring-400 dark:hover:border-spring-600 transition-all peer-checked:bg-spring-50 dark:peer-checked:bg-spring-900/10 peer-checked:border-spring-500 relative overflow-hidden">
+                    <div class="h-full p-4 rounded-2xl border border-gray-200 dark:border-white/5 bg-white dark:bg-[#15151e] hover:border-spring-400 dark:hover:border-spring-500 transition-all duration-200 peer-checked:bg-spring-50 dark:peer-checked:bg-spring-900/20 peer-checked:border-spring-500 peer-checked:ring-1 peer-checked:ring-spring-500">
                         <div class="flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-white dark:bg-dark-700 text-gray-500 peer-checked:text-spring-600 peer-checked:bg-white flex items-center justify-center shadow-sm transition-colors">
-                                <i class="fas ${f.icon || iconMap[f.id] || 'fa-star'}"></i>
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 peer-checked:text-spring-600 peer-checked:bg-white dark:peer-checked:bg-spring-900 flex items-center justify-center transition-colors">
+                                <i class="fas ${f.icon || iconMap[f.id] || 'fa-star'} text-xs"></i>
                             </div>
                             <div>
-                                <span class="block text-xs font-bold text-gray-900 dark:text-white mb-0.5">${f.label}</span>
-                                <span class="block text-[10px] text-gray-500 dark:text-gray-400 leading-relaxed">${f.description}</span>
+                                <span class="block text-xs font-bold text-gray-900 dark:text-white mb-0.5 group-hover:text-spring-600 transition-colors">${f.label}</span>
+                                <span class="block text-[10px] text-gray-500 dark:text-gray-400 leading-tight">${f.description}</span>
                             </div>
                         </div>
-                        <div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity text-spring-600">
+                        <div class="absolute top-3 right-3 opacity-0 peer-checked:opacity-100 transition-all transform scale-50 peer-checked:scale-100 text-spring-600">
                             <i class="fas fa-check-circle"></i>
                         </div>
                     </div>
@@ -443,13 +515,10 @@
             container.appendChild(div);
         });
 
-        // Re-bind listeners for JWT logic
         document.addEventListener('change', (e) => {
             if(e.target.closest('#dependenciesArea')) updateConditionalFeatures();
         });
     }
-
-    // --- DEPENDENCY LOGIC (ACCORDION & SEARCH) ---
 
     function renderDependencies(groups) {
         const container = document.getElementById('dependenciesArea');
@@ -458,40 +527,38 @@
         Object.values(groups).forEach((group, index) => {
             const groupId = `group-${index}`;
             const section = document.createElement('div');
-            section.className = 'dep-group group'; // 'group' for hover effects
+            section.className = 'dep-group mb-2';
             section.dataset.name = group.name.toLowerCase();
 
-            // Accordion Header
             const header = document.createElement('button');
-            header.className = 'w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 dark:hover:bg-dark-800/50 transition-colors focus:outline-none';
+            header.className = 'w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-white/5 rounded-xl transition-colors group focus:outline-none';
             header.onclick = () => toggleSection(groupId);
 
             header.innerHTML = `
-                <span class="font-bold text-sm text-gray-700 dark:text-gray-200">${group.name}</span>
-                <i id="icon-${groupId}" class="fas fa-chevron-down text-gray-400 text-xs transition-transform duration-300"></i>
+                <span class="font-bold text-xs text-gray-700 dark:text-gray-300 group-hover:text-spring-500 transition-colors uppercase tracking-wide">${group.name}</span>
+                <i id="icon-${groupId}" class="fas fa-chevron-down text-gray-400 text-[10px] transition-transform duration-300"></i>
             `;
 
-            // Accordion Content
             const contentWrapper = document.createElement('div');
             contentWrapper.id = groupId;
-            contentWrapper.className = 'accordion-content collapsed bg-white dark:bg-dark-900';
+            contentWrapper.className = 'accordion-content collapsed';
 
             const grid = document.createElement('div');
-            grid.className = 'grid grid-cols-1 md:grid-cols-2 gap-2 p-4 pt-0 border-b border-gray-100 dark:border-gray-800';
+            grid.className = 'grid grid-cols-1 md:grid-cols-2 gap-2 p-2 pl-4';
 
             (group.dependencies || []).forEach(dep => {
                 const label = document.createElement('label');
-                label.className = 'dep-item relative flex items-start p-3 rounded-lg border border-transparent hover:bg-gray-50 dark:hover:bg-dark-800 cursor-pointer transition-all';
+                label.className = 'dep-item relative flex items-start p-2.5 rounded-lg border border-transparent hover:bg-gray-100 dark:hover:bg-white/5 cursor-pointer transition-all group/item';
                 label.dataset.searchText = `${dep.name.toLowerCase()} ${dep.description?.toLowerCase() || ''}`;
 
                 label.innerHTML = `
-                    <input type="checkbox" value="${dep.id}" class="custom-checkbox peer sr-only" onchange="updateDepCount(this)">
-                    <div class="w-4 h-4 mt-0.5 mr-3 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-dark-800 flex items-center justify-center transition-colors">
-                        <svg class="w-2.5 h-2.5 text-white hidden pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    <input type="checkbox" value="${dep.id}" class="peer sr-only" onchange="updateDepCount(this)">
+                    <div class="w-4 h-4 mt-0.5 mr-3 rounded border border-gray-300 dark:border-gray-600 peer-checked:bg-spring-500 peer-checked:border-spring-500 flex items-center justify-center transition-all bg-white dark:bg-dark-800 shadow-sm">
+                        <i class="fas fa-check text-white text-[8px] opacity-0 peer-checked:opacity-100"></i>
                     </div>
-                    <div class="flex-1">
-                        <span class="block text-xs font-bold text-gray-900 dark:text-white peer-checked:text-spring-600 transition-colors">${dep.name}</span>
-                        <span class="block text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 leading-snug">${dep.description || ''}</span>
+                    <div class="flex-1 min-w-0">
+                        <span class="block text-xs font-bold text-gray-800 dark:text-gray-200 peer-checked:text-spring-500 transition-colors truncate">${dep.name}</span>
+                        <span class="block text-[10px] text-gray-500 dark:text-gray-400 mt-0.5 leading-tight line-clamp-1 group-hover/item:text-gray-600 dark:group-hover/item:text-gray-300">${dep.description || ''}</span>
                     </div>
                 `;
                 grid.appendChild(label);
@@ -507,10 +574,7 @@
     function toggleSection(id) {
         const content = document.getElementById(id);
         const icon = document.getElementById(`icon-${id}`);
-
-        const isClosed = content.classList.contains('collapsed');
-
-        if (isClosed) {
+        if (content.classList.contains('collapsed')) {
             content.classList.remove('collapsed');
             icon.classList.add('rotate-180');
         } else {
@@ -519,32 +583,26 @@
         }
     }
 
-    // Global Search Logic
     document.getElementById('dependencySearch').addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
-        const groups = document.querySelectorAll('.dep-group');
-
-        groups.forEach(group => {
+        document.querySelectorAll('.dep-group').forEach(group => {
             const items = group.querySelectorAll('.dep-item');
-            let hasVisibleItems = false;
+            let hasVisible = false;
             const contentId = group.querySelector('.accordion-content').id;
 
             items.forEach(item => {
                 const match = item.dataset.searchText.includes(term);
                 item.style.display = match ? 'flex' : 'none';
-                if (match) hasVisibleItems = true;
+                if (match) hasVisible = true;
             });
 
             if (term.length > 0) {
-                // Search mode: show group only if it has matches
-                group.style.display = hasVisibleItems ? 'block' : 'none';
-                if (hasVisibleItems) {
-                    // Open accordion automatically
+                group.style.display = hasVisible ? 'block' : 'none';
+                if (hasVisible) {
                     document.getElementById(contentId).classList.remove('collapsed');
                     document.getElementById(`icon-${contentId}`).classList.add('rotate-180');
                 }
             } else {
-                // Reset mode: show all groups, collapse all
                 group.style.display = 'block';
                 items.forEach(i => i.style.display = 'flex');
                 document.getElementById(contentId).classList.add('collapsed');
@@ -556,45 +614,59 @@
     function updateDepCount(checkbox) {
         const label = checkbox.closest('.dep-item');
         if(checkbox.checked) {
-            label.classList.add('selected');
+            label.classList.add('bg-spring-50', 'dark:bg-spring-900/20');
         } else {
-            label.classList.remove('selected');
+            label.classList.remove('bg-spring-50', 'dark:bg-spring-900/20');
         }
-
         const count = document.querySelectorAll('#dependenciesArea input:checked').length;
-        document.getElementById('depCountLabel').textContent = `${count} selected`;
+        document.getElementById('depCountLabel').textContent = count;
         updateConditionalFeatures();
     }
 
     function updateConditionalFeatures() {
         const selected = Array.from(document.querySelectorAll('#dependenciesArea input:checked')).map(c => c.value);
-        const hasSecurity = selected.includes('security'); // Assuming ID is 'security'
-
+        const hasSecurity = selected.includes('security');
         const jwtCard = document.getElementById('feature-card-enableJwt');
         if(jwtCard) {
-            if(hasSecurity) {
-                jwtCard.classList.remove('hidden');
-                jwtCard.classList.add('animate-fade-in');
-            } else {
+            if(hasSecurity) jwtCard.classList.remove('hidden');
+            else {
                 jwtCard.classList.add('hidden');
                 document.getElementById('enableJwt').checked = false;
             }
         }
     }
 
-    // --- SUBMISSION ---
+    // --- SUBMIT ---
+    async function validateAndSubmit() {
+        let isValid = true;
+        const requiredFields = ['groupId', 'artifactId', 'projectName'];
+
+        requiredFields.forEach(id => {
+            const el = document.getElementById(id);
+            if(!el.value.trim()) {
+                el.classList.add('input-error');
+                setTimeout(() => el.classList.remove('input-error'), 500);
+                isValid = false;
+            }
+        });
+
+        if(!isValid) {
+            showToast('Missing Info', 'Please fill in all required fields.', 'error');
+            return;
+        }
+        submitForm();
+    }
+
     async function submitForm() {
         const loading = document.getElementById('loadingOverlay');
         loading.classList.remove('hidden');
 
-        // Simulate slight delay for effect if local
         await new Promise(r => setTimeout(r, 800));
 
         const deps = Array.from(document.querySelectorAll('#dependenciesArea input:checked')).map(c => c.value);
         const feats = {};
-        availableFeatures.forEach(f => {
-            const el = document.getElementById(f.id);
-            if(el) feats[f.id] = el.checked;
+        document.querySelectorAll('#featuresContainer input[type="checkbox"]').forEach(el => {
+            feats[el.id] = el.checked;
         });
 
         const payload = {
@@ -609,7 +681,7 @@
             architecture: document.getElementById('architecture').value,
             dependencies: deps,
             features: feats,
-            outputPath: document.getElementById('outputPath').value
+            outputPath: 'project.zip'
         };
 
         try {
@@ -620,38 +692,60 @@
             });
 
             const data = await res.json();
-            showResult(data.success, data.message || (data.success ? 'Project generated successfully!' : 'Something went wrong.'));
+            if(data.success) showToast('Success', 'Project generated successfully!', 'success');
+            else showToast('Error', data.message || 'Generation failed', 'error');
+
         } catch (e) {
             console.error(e);
-            // Fallback for demo if API fails
-            showResult(false, "Could not connect to the backend API.");
+            showToast('Connection Error', 'Could not connect to backend.', 'error');
         } finally {
             loading.classList.add('hidden');
         }
     }
 
-    function showResult(success, msg) {
-        const modal = document.getElementById('resultModal');
-        const icon = document.getElementById('resultIcon');
-        const title = document.getElementById('resultTitle');
-        const text = document.getElementById('resultText');
+    function showToast(title, msg, type) {
+        const toast = document.getElementById('toast');
+        const icon = document.getElementById('toastIcon');
+        const titleEl = document.getElementById('toastTitle');
+        const msgEl = document.getElementById('toastMessage');
 
-        modal.classList.remove('hidden');
+        toast.classList.remove('translate-x-[120%]');
 
-        if(success) {
-            icon.className = 'mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400';
-            icon.innerHTML = '<i class="fas fa-check text-3xl"></i>';
-            title.textContent = 'Success!';
-        } else {
-            icon.className = 'mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
-            icon.innerHTML = '<i class="fas fa-times text-3xl"></i>';
-            title.textContent = 'Error';
-        }
-        text.textContent = msg;
+        const iconClass = type === 'success'
+            ? 'fas fa-check-circle text-green-500 text-2xl'
+            : 'fas fa-exclamation-circle text-red-500 text-2xl';
+        const borderClass = type === 'success' ? 'border-green-500' : 'border-red-500';
+
+        icon.innerHTML = `<i class="${iconClass}"></i>`;
+        toast.className = `fixed top-5 right-5 transform transition-transform duration-300 z-50 bg-white dark:bg-dark-900 border-l-4 ${borderClass} rounded-xl shadow-2xl flex items-center gap-4 p-4 min-w-[320px] max-w-sm`;
+
+        titleEl.textContent = title;
+        msgEl.textContent = msg;
+
+        setTimeout(() => {
+            toast.classList.add('translate-x-[120%]');
+        }, 4000);
     }
 
     function closeModal() {
         document.getElementById('resultModal').classList.add('hidden');
+    }
+
+    function showResultModal(success, msg) {
+         const modal = document.getElementById('resultModal');
+         const icon = document.getElementById('resultIcon');
+         const title = document.getElementById('resultTitle');
+         const text = document.getElementById('resultText');
+
+         modal.classList.remove('hidden');
+         if(success) {
+             icon.innerHTML = '<i class="fas fa-check text-4xl text-green-500"></i>';
+             title.textContent = 'Success!';
+         } else {
+             icon.innerHTML = '<i class="fas fa-times text-4xl text-red-500"></i>';
+             title.textContent = 'Error';
+         }
+         text.textContent = msg;
     }
 
     window.addEventListener('DOMContentLoaded', init);

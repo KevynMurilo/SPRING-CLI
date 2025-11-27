@@ -12,7 +12,7 @@
 
 	<groupId>com.springcli</groupId>
 	<artifactId>spring-cli</artifactId>
-	<version>1.0.0</version>
+	<version>1.1.0</version>
 	<name>spring-cli</name>
 	<description>Native CLI tool built with Spring Shell to scaffold Spring Boot projects with custom architectures</description>
 

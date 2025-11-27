@@ -20,7 +20,7 @@ public class SwaggerConfig {
         OpenAPI openAPI = new OpenAPI()
                 .info(new Info()
                         .title("{{ projectName }} API")
-                        .version("1.0.0")
+                        .version("1.1.0")
                         .description("API documentation for {{ projectName }}")
                         .contact(new Contact()
                                 .name("API Support")

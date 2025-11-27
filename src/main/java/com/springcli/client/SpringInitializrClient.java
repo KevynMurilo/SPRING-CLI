@@ -87,7 +87,12 @@ public class SpringInitializrClient {
     private Map<String, String> buildQueryParams(ProjectConfig config) {
         Map<String, String> params = new LinkedHashMap<>();
 
-        params.put("type", config.buildTool());
+        String buildTool = config.buildTool().toLowerCase();
+        if (!buildTool.endsWith("-project")) {
+            buildTool = buildTool.contains("gradle") ? "gradle-project" : "maven-project";
+        }
+        params.put("type", buildTool);
+
         params.put("language", "java");
         params.put("bootVersion", config.springBootVersion());
         params.put("groupId", config.groupId());
@@ -95,7 +100,7 @@ public class SpringInitializrClient {
         params.put("name", config.name());
         params.put("description", config.description());
         params.put("packageName", config.packageName());
-        params.put("packaging", config.packaging());
+        params.put("packaging", config.packaging() != null ? config.packaging() : "jar");
         params.put("javaVersion", config.javaVersion());
         params.put("baseDir", config.artifactId());
 

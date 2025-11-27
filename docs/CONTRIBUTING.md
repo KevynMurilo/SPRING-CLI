@@ -285,7 +285,7 @@ com.example.demo
 2. **Generate**: Test project generation with your changes:
    ```bash
    mvn clean package
-   java -jar target/spring-cli-1.0.0.jar new my-test --architecture=YOUR_ARCH
+   java -jar target/spring-cli-1.1.0.jar new my-test --architecture=YOUR_ARCH
    ```
 3. **Generated Project**: Verify the generated project compiles:
    ```bash

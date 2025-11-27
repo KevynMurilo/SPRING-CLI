@@ -55,7 +55,7 @@ setx PATH "%JAVA_HOME%\bin;%PATH%"
 mvn clean package -DskipTests
 
 # Run the JAR
-java -jar target/spring-cli-1.0.0.jar
+java -jar target/spring-cli-1.1.0.jar
 ```
 
 ### 2. Build Native Image (Recommended)
@@ -145,7 +145,7 @@ mvn clean package -Pnative
 Ensure templates are included in the JAR:
 ```bash
 # Check if templates are in the JAR
-jar tf target/spring-cli-1.0.0.jar | grep templates
+jar tf target/spring-cli-1.1.0.jar | grep templates
 ```
 
 ## Docker Build
@@ -154,10 +154,10 @@ jar tf target/spring-cli-1.0.0.jar | grep templates
 
 ```bash
 # Multi-stage build
-docker build -t spring-cli:1.0.0 .
+docker build -t spring-cli:1.1.0 .
 
 # Run in Docker
-docker run -it --rm spring-cli:1.0.0
+docker run -it --rm spring-cli:1.1.0
 ```
 
 ### Dockerfile for Native Image
@@ -192,7 +192,7 @@ Already configured in `pom.xml`:
 ### JVM Optimization (JAR mode)
 
 ```bash
-java -XX:+UseG1GC -XX:MaxRAMPercentage=75 -jar target/spring-cli-1.0.0.jar
+java -XX:+UseG1GC -XX:MaxRAMPercentage=75 -jar target/spring-cli-1.1.0.jar
 ```
 
 ## Distribution
@@ -210,10 +210,10 @@ cp README.md dist/
 cp LICENSE dist/
 
 # Create archive
-tar -czf spring-cli-1.0.0-linux-x64.tar.gz dist/
+tar -czf spring-cli-1.1.0-linux-x64.tar.gz dist/
 
 # Or ZIP for Windows
-zip -r spring-cli-1.0.0-windows-x64.zip dist/
+zip -r spring-cli-1.1.0-windows-x64.zip dist/
 ```
 
 ## CI/CD Integration
