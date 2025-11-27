@@ -413,7 +413,13 @@ public class PomManipulationService {
     private String cleanupWhitespace(String pomContent) {
         return pomContent
                 .replaceAll("\n{3,}", "\n\n")
-                .replaceAll("\t{2,}", "\t");
+                .replaceAll("(?m)^[ \\t]+$", "")
+                .replaceAll("(?m)\\t+\\n", "\\n")
+                .replaceAll("[ \\t]+\\n", "\\n")
+                .replaceAll("</dependency>\\n+<dependency>", "</dependency>\\n\\t\\t<dependency>")
+                .replaceAll("</plugin>\\n+<plugin>", "</plugin>\\n\\t\\t\\t<plugin>")
+                .replaceAll("</property>\\n+<property>", "</property>\\n\\t\\t<property>")
+                .trim();
     }
 
     private String getJwtDependencies(String jjwtVersion) {
