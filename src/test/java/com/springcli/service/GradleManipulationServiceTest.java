@@ -18,22 +18,22 @@ class GradleManipulationServiceTest {
     private GradleManipulationService service;
 
     private final String basicGradle = """
-            dependencies {
-                implementation 'org.springframework.boot:spring-boot-starter'
-            }
-            """;
+        dependencies {
+            implementation 'org.springframework.boot:spring-boot-starter'
+        }
+        """;
 
     @Test
     void shouldEnhanceGradleWithPlugins() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
@@ -45,14 +45,14 @@ class GradleManipulationServiceTest {
     @Test
     void shouldInjectSpringBootBom() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
@@ -64,14 +64,14 @@ class GradleManipulationServiceTest {
     @Test
     void shouldInjectJWTDependencies() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(true, false, false, false, false, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(true, false, false, false, false, false, false, false, false))
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
@@ -83,14 +83,14 @@ class GradleManipulationServiceTest {
     @Test
     void shouldInjectSwaggerDependencies() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(false, true, false, false, false, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(false, true, false, false, false, false, false, false, false))
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
@@ -100,14 +100,14 @@ class GradleManipulationServiceTest {
     @Test
     void shouldInjectMapStructDependencies() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(false, false, false, false, true, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(false, false, false, false, true, false, false, false, false))
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
@@ -119,14 +119,14 @@ class GradleManipulationServiceTest {
     @Test
     void shouldInjectMultipleFeatureDependencies() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(true, true, false, false, true, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(true, true, false, false, true, false, false, false, false))
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
@@ -138,14 +138,14 @@ class GradleManipulationServiceTest {
     @Test
     void shouldEnsureTestConfiguration() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
@@ -157,23 +157,23 @@ class GradleManipulationServiceTest {
     @Test
     void shouldNotDuplicatePlugins() {
         String gradleWithPlugins = """
-            plugins {
-                id 'java'
-                id 'org.springframework.boot' version '3.2.0'
-            }
-            dependencies {
-            }
-            """;
+        plugins {
+            id 'java'
+            id 'org.springframework.boot' version '3.2.0'
+        }
+        dependencies {
+        }
+        """;
 
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhanceGradleFile(gradleWithPlugins, config);
 
@@ -184,14 +184,14 @@ class GradleManipulationServiceTest {
     @Test
     void shouldCleanupWhitespace() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
@@ -201,14 +201,14 @@ class GradleManipulationServiceTest {
     @Test
     void shouldHandleDifferentSpringBootVersions() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.4.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.4.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
@@ -218,31 +218,31 @@ class GradleManipulationServiceTest {
     @Test
     void shouldNotThrowExceptionOnEnhancement() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(true, true, false, false, true, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(true, true, false, false, true, false, false, false, false))
+                .build();
 
         assertThatCode(() ->
-            service.enhanceGradleFile(basicGradle, config)
+                service.enhanceGradleFile(basicGradle, config)
         ).doesNotThrowAnyException();
     }
 
     @Test
     void shouldHandleImplementationDependencies() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(false, true, false, false, false, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(false, true, false, false, false, false, false, false, false))
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
@@ -250,33 +250,33 @@ class GradleManipulationServiceTest {
     }
 
     @Test
-    void shouldHandleCompileOnlyDependencies() {
+    void shouldHandleAnnotationProcessorScopeDependencies() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(false, false, false, false, true, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(false, false, false, false, true, false, false, false, false))
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
-        assertThat(enhanced).contains("compileOnly");
+        assertThat(enhanced).contains("annotationProcessor");
     }
 
     @Test
     void shouldHandleRuntimeOnlyDependencies() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(true, false, false, false, false, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(true, false, false, false, false, false, false, false, false))
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 
@@ -287,14 +287,14 @@ class GradleManipulationServiceTest {
     @Test
     void shouldInjectDependenciesInCorrectLocation() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(true, false, false, false, false, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(true, false, false, false, false, false, false, false, false))
+                .build();
 
         String enhanced = service.enhanceGradleFile(basicGradle, config);
 

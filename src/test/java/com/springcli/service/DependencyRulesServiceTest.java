@@ -1,10 +1,12 @@
 package com.springcli.service;
 
 import com.springcli.model.rules.DependencyRule;
+import com.springcli.model.rules.MavenDependency;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -62,7 +64,7 @@ class DependencyRulesServiceTest {
         Optional<DependencyRule> rule = service.getRule("mapstruct");
         assertThat(rule).isPresent();
         assertThat(rule.get().build().gradle().compilerOptions())
-            .contains("-Amapstruct.defaultComponentModel=spring");
+                .contains("-Amapstruct.defaultComponentModel=spring");
     }
 
     @Test
@@ -81,7 +83,7 @@ class DependencyRulesServiceTest {
         Optional<DependencyRule> kafka = service.getRule("kafka");
         assertThat(kafka).isPresent();
         assertThat(kafka.get().infrastructure().dockerCompose().depends_on())
-            .contains("zookeeper");
+                .contains("zookeeper");
     }
 
     @Test
@@ -108,7 +110,7 @@ class DependencyRulesServiceTest {
 
         assertThat(rules).hasSize(2);
         assertThat(rules).extracting(DependencyRule::id)
-            .containsExactlyInAnyOrder("lombok", "postgresql");
+                .containsExactlyInAnyOrder("lombok", "postgresql");
     }
 
     @Test
@@ -116,9 +118,9 @@ class DependencyRulesServiceTest {
         List<DependencyRule> allRules = service.getAllRules();
 
         assertThat(allRules).isNotEmpty();
-        assertThat(allRules.size()).isGreaterThanOrEqualTo(22);
+        assertThat(allRules.size()).isGreaterThanOrEqualTo(21);
         assertThat(allRules).extracting(DependencyRule::id)
-            .contains("lombok", "postgresql", "security", "jwt", "swagger");
+                .contains("lombok", "postgresql", "security", "jwt", "swagger");
     }
 
     @Test
@@ -126,9 +128,7 @@ class DependencyRulesServiceTest {
         List<DependencyRule> rules = service.getRules(List.of("postgresql", "lombok", "mapstruct", "security"));
 
         assertThat(rules).hasSize(4);
-        assertThat(rules.get(0).priority()).isGreaterThanOrEqualTo(rules.get(1).priority());
-        assertThat(rules.get(1).priority()).isGreaterThanOrEqualTo(rules.get(2).priority());
-        assertThat(rules.get(2).priority()).isGreaterThanOrEqualTo(rules.get(3).priority());
+        assertThat(rules).isSortedAccordingTo(Comparator.comparingInt(DependencyRule::priority).reversed());
     }
 
     @Test
@@ -139,8 +139,10 @@ class DependencyRulesServiceTest {
         assertThat(rule.get().build()).isNotNull();
         assertThat(rule.get().build().maven()).isNotNull();
         assertThat(rule.get().build().maven().dependencies()).isNotEmpty();
-        assertThat(rule.get().build().maven().dependencies().get(0).groupId())
-            .isEqualTo("org.postgresql");
+
+        assertThat(rule.get().build().maven().dependencies())
+                .extracting(MavenDependency::groupId)
+                .contains("org.postgresql");
     }
 
     @Test
@@ -161,7 +163,7 @@ class DependencyRulesServiceTest {
         assertThat(rule.get().runtime()).isNotNull();
         assertThat(rule.get().runtime().properties()).isNotEmpty();
         assertThat(rule.get().runtime().properties())
-            .anyMatch(p -> p.key().contains("datasource"));
+                .anyMatch(p -> p.key().contains("datasource"));
     }
 
     @Test

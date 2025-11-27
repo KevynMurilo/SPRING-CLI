@@ -34,14 +34,14 @@ class PomManipulationServiceTest {
     @Test
     void shouldEnhancePomWithProperties() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhancePomFile(basicPom, config);
 
@@ -54,14 +54,14 @@ class PomManipulationServiceTest {
     @Test
     void shouldInjectSpringBootBom() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhancePomFile(basicPom, config);
 
@@ -74,14 +74,14 @@ class PomManipulationServiceTest {
     @Test
     void shouldInjectJWTDependencies() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(true, false, false, false, false, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(true, false, false, false, false, false, false, false, false))
+                .build();
 
         String enhanced = service.enhancePomFile(basicPom, config);
 
@@ -94,14 +94,14 @@ class PomManipulationServiceTest {
     @Test
     void shouldInjectSwaggerDependencies() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(false, true, false, false, false, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(false, true, false, false, false, false, false, false, false))
+                .build();
 
         String enhanced = service.enhancePomFile(basicPom, config);
 
@@ -112,14 +112,14 @@ class PomManipulationServiceTest {
     @Test
     void shouldInjectMapStructDependencies() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(false, false, false, false, true, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(false, false, false, false, true, false, false, false, false))
+                .build();
 
         String enhanced = service.enhancePomFile(basicPom, config);
 
@@ -130,14 +130,14 @@ class PomManipulationServiceTest {
     @Test
     void shouldInjectMultipleFeatureDependencies() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(true, true, false, false, true, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(true, true, false, false, true, false, false, false, false))
+                .build();
 
         String enhanced = service.enhancePomFile(basicPom, config);
 
@@ -149,14 +149,14 @@ class PomManipulationServiceTest {
     @Test
     void shouldEnsurePluginsSection() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhancePomFile(basicPom, config);
 
@@ -182,14 +182,14 @@ class PomManipulationServiceTest {
             """;
 
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhancePomFile(pomWithProperties, config);
 
@@ -201,14 +201,14 @@ class PomManipulationServiceTest {
     @Test
     void shouldCleanupWhitespace() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhancePomFile(basicPom, config);
 
@@ -219,14 +219,14 @@ class PomManipulationServiceTest {
     @Test
     void shouldHandleJava21() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("21")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("21")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhancePomFile(basicPom, config);
 
@@ -238,14 +238,14 @@ class PomManipulationServiceTest {
     @Test
     void shouldHandleDifferentSpringBootVersions() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.4.0")
-            .dependencies(Set.of())
-            .features(ProjectFeatures.defaults())
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.4.0")
+                .dependencies(Set.of())
+                .features(ProjectFeatures.defaults())
+                .build();
 
         String enhanced = service.enhancePomFile(basicPom, config);
 
@@ -255,36 +255,36 @@ class PomManipulationServiceTest {
     @Test
     void shouldNotThrowExceptionOnEnhancement() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(true, true, false, false, true, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(true, true, false, false, true, false, false, false, false))
+                .build();
 
         org.assertj.core.api.Assertions.assertThatCode(() ->
-            service.enhancePomFile(basicPom, config)
+                service.enhancePomFile(basicPom, config)
         ).doesNotThrowAnyException();
     }
 
     @Test
     void shouldInjectDependenciesInCorrectLocation() {
         ProjectConfig config = ProjectConfig.builder()
-            .groupId("com.example")
-            .artifactId("test-app")
-            .packageName("com.example.test")
-            .javaVersion("17")
-            .springBootVersion("3.2.0")
-            .dependencies(Set.of())
-            .features(new ProjectFeatures(true, false, false, false, false, false, false, false, false))
-            .build();
+                .groupId("com.example")
+                .artifactId("test-app")
+                .packageName("com.example.test")
+                .javaVersion("17")
+                .springBootVersion("3.2.0")
+                .dependencies(Set.of())
+                .features(new ProjectFeatures(true, false, false, false, false, false, false, false, false))
+                .build();
 
         String enhanced = service.enhancePomFile(basicPom, config);
 
-        int dependenciesStart = enhanced.indexOf("<dependencies>");
-        int dependenciesEnd = enhanced.indexOf("</dependencies>");
+        int dependenciesStart = enhanced.lastIndexOf("<dependencies>");
+        int dependenciesEnd = enhanced.lastIndexOf("</dependencies>");
         int jjwtPosition = enhanced.indexOf("io.jsonwebtoken");
 
         assertThat(jjwtPosition).isGreaterThan(dependenciesStart);

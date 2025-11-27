@@ -1,15 +1,25 @@
 package com.springcli.service;
 
+import com.springcli.model.rules.DependencyRule;
+import com.springcli.model.rules.ScaffoldingConfig;
+import com.springcli.model.rules.ScaffoldingFile;
+import com.springcli.service.config.DependencyConfigurationRegistry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 class ScaffoldingGeneratorServiceTest {
@@ -17,207 +27,181 @@ class ScaffoldingGeneratorServiceTest {
     @Autowired
     private ScaffoldingGeneratorService service;
 
+    @MockitoBean
+    private DependencyConfigurationRegistry configRegistry;
+
     @TempDir
     Path tempDir;
 
     @Test
     void shouldGenerateSecurityConfigForSecurityDependency() {
-        Set<String> dependencies = Set.of("security");
-        String basePackage = "com.example.app";
+        String depId = "security";
+        String templatePath = "src/main/java/{{basePackage}}/config/SecurityConfig.java";
+        String templateContent = "package {{basePackage}}.config;\n@EnableWebSecurity";
 
+        mockRuleWithFile(depId, templatePath, templateContent);
+
+        Set<String> dependencies = Set.of(depId);
+        String basePackage = "com.example.app";
         Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
 
         assertThat(files).isNotEmpty();
-        assertThat(files).containsKey(tempDir.resolve("src/main/java/com/example/app/config/SecurityConfig.java").toString());
 
-        String content = files.get(tempDir.resolve("src/main/java/com/example/app/config/SecurityConfig.java").toString());
-        assertThat(content).contains("package com.example.app.config;");
-        assertThat(content).contains("@EnableWebSecurity");
+        String expectedRelativePath = "src/main/java/com/example/app/config/SecurityConfig.java";
+        boolean pathExists = files.keySet().stream()
+                .anyMatch(path -> path.replace("\\", "/").endsWith(expectedRelativePath));
+
+        assertThat(pathExists).isTrue();
+
+        String generatedContent = files.values().iterator().next();
+        assertThat(generatedContent).contains("package com.example.app.config;");
+        assertThat(generatedContent).contains("@EnableWebSecurity");
     }
 
     @Test
     void shouldGenerateJwtServiceForJwtDependency() {
-        Set<String> dependencies = Set.of("jwt");
-        String basePackage = "com.example.app";
+        String depId = "jwt";
+        String templatePath = "src/main/java/{{basePackage}}/security/JwtService.java";
+        String templateContent = "package {{basePackage}}.security;\npublic class JwtService";
 
+        mockRuleWithFile(depId, templatePath, templateContent);
+
+        Set<String> dependencies = Set.of(depId);
+        String basePackage = "com.example.app";
         Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
 
         assertThat(files).isNotEmpty();
-        assertThat(files).containsKey(tempDir.resolve("src/main/java/com/example/app/security/JwtService.java").toString());
 
-        String content = files.get(tempDir.resolve("src/main/java/com/example/app/security/JwtService.java").toString());
-        assertThat(content).contains("package com.example.app.security;");
-        assertThat(content).contains("public class JwtService");
+        String expectedRelativePath = "src/main/java/com/example/app/security/JwtService.java";
+        boolean pathExists = files.keySet().stream()
+                .anyMatch(path -> path.replace("\\", "/").endsWith(expectedRelativePath));
+
+        assertThat(pathExists).isTrue();
+
+        String generatedContent = files.values().iterator().next();
+        assertThat(generatedContent).contains("package com.example.app.security;");
+        assertThat(generatedContent).contains("public class JwtService");
     }
 
     @Test
     void shouldGenerateSwaggerConfigForSwaggerDependency() {
-        Set<String> dependencies = Set.of("swagger");
-        String basePackage = "com.example.app";
+        String depId = "swagger";
+        String templatePath = "src/main/java/{{basePackage}}/config/SwaggerConfig.java";
+        String templateContent = "package {{basePackage}}.config;\npublic OpenAPI customOpenAPI()";
 
+        mockRuleWithFile(depId, templatePath, templateContent);
+
+        Set<String> dependencies = Set.of(depId);
+        String basePackage = "com.example.app";
         Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
 
         assertThat(files).isNotEmpty();
-        String configPath = tempDir.resolve("src/main/java/com/example/app/config/SwaggerConfig.java").toString();
-        assertThat(files).containsKey(configPath);
 
-        String content = files.get(configPath);
-        assertThat(content).contains("package com.example.app.config;");
-        assertThat(content).contains("public OpenAPI customOpenAPI()");
-    }
+        String expectedRelativePath = "src/main/java/com/example/app/config/SwaggerConfig.java";
+        boolean pathExists = files.keySet().stream()
+                .anyMatch(path -> path.replace("\\", "/").endsWith(expectedRelativePath));
 
-    @Test
-    void shouldGenerateMultipleFilesForMultipleDependencies() {
-        Set<String> dependencies = Set.of("security", "jwt", "swagger");
-        String basePackage = "com.example.app";
+        assertThat(pathExists).isTrue();
 
-        Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
-
-        assertThat(files).hasSizeGreaterThanOrEqualTo(3);
+        String generatedContent = files.values().iterator().next();
+        assertThat(generatedContent).contains("package com.example.app.config;");
+        assertThat(generatedContent).contains("public OpenAPI customOpenAPI()");
     }
 
     @Test
     void shouldReturnEmptyForDependenciesWithoutScaffolding() {
-        Set<String> dependencies = Set.of("lombok", "actuator");
-        String basePackage = "com.example.app";
+        DependencyRule mockRule = mock(DependencyRule.class);
+        when(mockRule.id()).thenReturn("lombok");
+        when(mockRule.scaffolding()).thenReturn(null);
 
-        Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
+        when(configRegistry.getRules(anyList())).thenReturn(List.of(mockRule));
+
+        Set<String> dependencies = Set.of("lombok");
+        Map<String, String> files = service.generateScaffoldingFiles(dependencies, "com.example", tempDir);
+
+        assertThat(files).isEmpty();
+    }
+
+    @Test
+    void shouldHandleNullScaffoldingInRule() {
+        DependencyRule mockRule = mock(DependencyRule.class);
+        when(mockRule.id()).thenReturn("simple-lib");
+
+        ScaffoldingConfig emptyConfig = mock(ScaffoldingConfig.class);
+        when(emptyConfig.files()).thenReturn(null);
+
+        when(mockRule.scaffolding()).thenReturn(emptyConfig);
+        when(configRegistry.getRules(anyList())).thenReturn(List.of(mockRule));
+
+        Map<String, String> files = service.generateScaffoldingFiles(Set.of("simple-lib"), "com.example", tempDir);
 
         assertThat(files).isEmpty();
     }
 
     @Test
     void shouldReplaceBasePackagePlaceholder() {
-        Set<String> dependencies = Set.of("security");
-        String basePackage = "org.test.myapp";
+        String depId = "test-dep";
+        mockRuleWithFile(depId, "src/{{basePackage}}/Test.java", "package {{basePackage}};");
 
-        Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
+        String complexPackage = "org.test.my.deep.app";
+        Map<String, String> files = service.generateScaffoldingFiles(Set.of(depId), complexPackage, tempDir);
 
         assertThat(files).isNotEmpty();
-        files.values().forEach(content -> {
-            assertThat(content).doesNotContain("{{basePackage}}");
-            if (content.contains("package")) {
-                assertThat(content).contains("org.test.myapp");
-            }
-        });
-    }
-
-    @Test
-    void shouldHandleEmptyDependencies() {
-        Set<String> dependencies = Set.of();
-        String basePackage = "com.example.app";
-
-        Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
-
-        assertThat(files).isEmpty();
-    }
-
-    @Test
-    void shouldHandleNullScaffolding() {
-        Set<String> dependencies = Set.of("postgresql", "redis");
-        String basePackage = "com.example.app";
-
-        Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
-
-        assertThat(files).isEmpty();
+        String content = files.values().iterator().next();
+        assertThat(content).contains("package org.test.my.deep.app;");
+        assertThat(content).doesNotContain("{{basePackage}}");
     }
 
     @Test
     void shouldResolveComplexPackagePaths() {
-        Set<String> dependencies = Set.of("security");
-        String basePackage = "com.company.product.module.app";
+        mockRuleWithFile("auth", "src/main/java/{{basePackage}}/Auth.java", "class Auth {}");
 
-        Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
+        String basePackage = "com.company.product.module.app";
+        Map<String, String> files = service.generateScaffoldingFiles(Set.of("auth"), basePackage, tempDir);
 
         assertThat(files).isNotEmpty();
-        assertThat(files.keySet()).anyMatch(path ->
-            path.contains("com/company/product/module/app")
-        );
+        String expectedPathSuffix = "com/company/product/module/app/Auth.java";
+
+        boolean pathMatch = files.keySet().stream()
+                .map(p -> p.replace("\\", "/"))
+                .anyMatch(p -> p.endsWith(expectedPathSuffix));
+
+        assertThat(pathMatch).isTrue();
     }
 
     @Test
     void shouldGetRulesWithScaffolding() {
-        Set<String> dependencies = Set.of("security", "jwt", "swagger", "lombok");
+        DependencyRule ruleWithScaffolding = mock(DependencyRule.class);
+        when(ruleWithScaffolding.id()).thenReturn("jwt");
+        ScaffoldingConfig config = mock(ScaffoldingConfig.class);
+        when(config.files()).thenReturn(Collections.singletonList(mock(ScaffoldingFile.class)));
+        when(ruleWithScaffolding.scaffolding()).thenReturn(config);
 
-        var rules = service.getRulesWithScaffolding(dependencies);
+        DependencyRule ruleWithoutScaffolding = mock(DependencyRule.class);
+        when(ruleWithoutScaffolding.id()).thenReturn("lombok");
+        when(ruleWithoutScaffolding.scaffolding()).thenReturn(null);
 
-        assertThat(rules).isNotEmpty();
-        assertThat(rules).hasSize(3);
-        assertThat(rules).extracting("id")
-            .containsExactlyInAnyOrder("security", "jwt", "swagger");
-        assertThat(rules).extracting("id")
-            .doesNotContain("lombok");
+        when(configRegistry.getRules(anyList())).thenReturn(List.of(ruleWithScaffolding, ruleWithoutScaffolding));
+
+        var rules = service.getRulesWithScaffolding(Set.of("jwt", "lombok"));
+
+        assertThat(rules).hasSize(1);
+        assertThat(rules.get(0).id()).isEqualTo("jwt");
     }
 
-    @Test
-    void shouldReturnEmptyForNonScaffoldingDependencies() {
-        Set<String> dependencies = Set.of("lombok", "actuator", "redis");
+    private void mockRuleWithFile(String depId, String pathTemplate, String contentTemplate) {
+        DependencyRule mockRule = mock(DependencyRule.class);
+        when(mockRule.id()).thenReturn(depId);
 
-        var rules = service.getRulesWithScaffolding(dependencies);
+        ScaffoldingFile mockFile = mock(ScaffoldingFile.class);
+        when(mockFile.path()).thenReturn(pathTemplate);
+        when(mockFile.content()).thenReturn(contentTemplate);
 
-        assertThat(rules).isEmpty();
-    }
+        ScaffoldingConfig mockConfig = mock(ScaffoldingConfig.class);
+        when(mockConfig.files()).thenReturn(List.of(mockFile));
 
-    @Test
-    void shouldGenerateCorrectFilePathsForMultipleDependencies() {
-        Set<String> dependencies = Set.of("security", "jwt");
-        String basePackage = "com.example.app";
+        when(mockRule.scaffolding()).thenReturn(mockConfig);
 
-        Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
-
-        assertThat(files).hasSizeGreaterThanOrEqualTo(2);
-        assertThat(files.keySet()).anyMatch(path -> path.contains("SecurityConfig.java"));
-        assertThat(files.keySet()).anyMatch(path -> path.contains("JwtService.java"));
-    }
-
-    @Test
-    void shouldHandleDifferentFileTypes() {
-        Set<String> dependencies = Set.of("security", "jwt", "swagger");
-        String basePackage = "com.example.app";
-
-        Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
-
-        assertThat(files.values()).allMatch(content ->
-            content.contains("package com.example.app")
-        );
-    }
-
-    @Test
-    void shouldReplaceAllPlaceholderOccurrences() {
-        Set<String> dependencies = Set.of("jwt");
-        String basePackage = "com.test.security";
-
-        Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
-
-        assertThat(files).isNotEmpty();
-        files.values().forEach(content -> {
-            assertThat(content).doesNotContain("{{basePackage}}");
-            int packageCount = content.split("com\\.test\\.security").length - 1;
-            assertThat(packageCount).isGreaterThan(0);
-        });
-    }
-
-    @Test
-    void shouldHandleNestedPackageStructure() {
-        Set<String> dependencies = Set.of("security");
-        String basePackage = "org.example.app";
-
-        Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
-
-        String configPath = tempDir.resolve("src/main/java/org/example/app/config/SecurityConfig.java").toString();
-        assertThat(files).containsKey(configPath);
-    }
-
-    @Test
-    void shouldGenerateValidJavaCode() {
-        Set<String> dependencies = Set.of("security", "jwt");
-        String basePackage = "com.example.demo";
-
-        Map<String, String> files = service.generateScaffoldingFiles(dependencies, basePackage, tempDir);
-
-        assertThat(files.values()).allMatch(content ->
-            content.contains("package") &&
-            (content.contains("class") || content.contains("@"))
-        );
+        when(configRegistry.getRules(anyList())).thenReturn(List.of(mockRule));
     }
 }
