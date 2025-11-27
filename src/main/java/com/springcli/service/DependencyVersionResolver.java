@@ -16,7 +16,7 @@ public class DependencyVersionResolver {
         VERSION_MAPPINGS.put("3.4", new LibraryVersions(
                 "0.12.6",
                 "2.7.0",
-                "1.6.3.Final",
+                "1.6.3",
                 "3.13.0",
                 "0.2.0",
                 "3.5.2",
@@ -32,7 +32,7 @@ public class DependencyVersionResolver {
         VERSION_MAPPINGS.put("3.3", new LibraryVersions(
                 "0.12.6",
                 "2.6.0",
-                "1.6.2.Final",
+                "1.6.0",
                 "3.13.0",
                 "0.2.0",
                 "3.3.1",
