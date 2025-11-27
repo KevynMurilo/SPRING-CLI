@@ -93,7 +93,7 @@ public class SpringInitializrClient {
         }
         params.put("type", buildTool);
 
-        params.put("language", "java");
+        params.put("language", config.language() != null ? config.language() : "java");
         params.put("bootVersion", config.springBootVersion());
         params.put("groupId", config.groupId());
         params.put("artifactId", config.artifactId());
@@ -150,9 +150,7 @@ public class SpringInitializrClient {
             String id = toolNode.path("id").asText();
             String name = toolNode.path("name").asText();
             String description = toolNode.path("description").asText("");
-            if (id.contains("maven") || id.contains("gradle")) {
-                buildTools.add(new BuildToolOption(id, name, description));
-            }
+            buildTools.add(new BuildToolOption(id, name, description));
         }
         return buildTools;
     }

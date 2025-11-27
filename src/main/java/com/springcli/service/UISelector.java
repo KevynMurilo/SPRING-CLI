@@ -92,19 +92,16 @@ public class UISelector {
     }
 
     public String selectSpringBootVersion(SpringMetadata metadata, String defaultVersion) {
-        List<String> stableVersions = metadata.springBootVersions().stream()
+        List<String> allVersions = metadata.springBootVersions();
+
+        String recommendedVersion = allVersions.stream()
                 .filter(v -> !v.contains("SNAPSHOT") && !v.contains("M") && !v.contains("RC"))
-                .collect(Collectors.toList());
+                .findFirst()
+                .orElse(allVersions.isEmpty() ? defaultVersion : allVersions.get(0));
 
-        if (stableVersions.isEmpty()) {
-            stableVersions = metadata.springBootVersions();
-        }
-
-        String stableDefault = stableVersions.isEmpty() ? defaultVersion : stableVersions.get(0);
-
-        List<SelectorItem<String>> versionItems = stableVersions.stream()
+        List<SelectorItem<String>> versionItems = allVersions.stream()
                 .map(version -> SelectorItem.of(
-                        version + (version.equals(stableDefault) ? " (recommended)" : ""),
+                        version + (version.equals(recommendedVersion) ? " (recommended)" : ""),
                         version
                 ))
                 .collect(Collectors.toList());
@@ -122,7 +119,7 @@ public class UISelector {
                 SingleItemSelector.SingleItemSelectorContext.empty()
         );
 
-        return context.getResultItem().map(SelectorItem::getItem).orElse(stableDefault);
+        return context.getResultItem().map(SelectorItem::getItem).orElse(recommendedVersion);
     }
 
     public String selectBuildTool(SpringMetadata metadata) {
@@ -192,6 +189,31 @@ public class UISelector {
         );
 
         return context.getResultItem().map(SelectorItem::getItem).orElse("jar");
+    }
+
+    public String selectLanguage(SpringMetadata metadata, String defaultLanguage) {
+        List<SelectorItem<String>> languageItems = metadata.languages().stream()
+                .map(lang -> SelectorItem.of(
+                        lang.substring(0, 1).toUpperCase() + lang.substring(1) +
+                        (lang.equals(defaultLanguage) ? " (recommended)" : ""),
+                        lang
+                ))
+                .collect(Collectors.toList());
+
+        SingleItemSelector<String, SelectorItem<String>> selector = new SingleItemSelector<>(
+                terminal,
+                languageItems,
+                "    Select language:",
+                null
+        );
+        selector.setResourceLoader(resourceLoader);
+        selector.setTemplateExecutor(templateExecutor);
+
+        SingleItemSelector.SingleItemSelectorContext<String, SelectorItem<String>> context = selector.run(
+                SingleItemSelector.SingleItemSelectorContext.empty()
+        );
+
+        return context.getResultItem().map(SelectorItem::getItem).orElse(defaultLanguage);
     }
 
     public Architecture selectArchitecture(Architecture defaultArch) {

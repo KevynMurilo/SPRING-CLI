@@ -58,7 +58,9 @@ public class WebGuiController {
             return ResponseEntity.ok(new ProjectOptions(
                     metadata.springBootVersions(),
                     metadata.javaVersions(),
-                    buildTools
+                    metadata.languages(),
+                    buildTools,
+                    metadata.packagingTypes()
             ));
         } catch (Exception e) {
             log.error("Failed to fetch project options", e);
@@ -95,7 +97,9 @@ public class WebGuiController {
                     .packageName(request.packageName())
                     .springBootVersion(request.springBootVersion())
                     .javaVersion(request.javaVersion())
+                    .language(request.language())
                     .buildTool(request.buildTool())
+                    .packaging(request.packaging())
                     .dependencies(request.dependencies())
                     .architecture(Architecture.valueOf(request.architecture()))
                     .features(request.features())

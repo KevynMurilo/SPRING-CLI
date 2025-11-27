@@ -12,6 +12,7 @@ public record ProjectConfig(
         String description,
         String packageName,
         String javaVersion,
+        String language,
         String buildTool,
         String packaging,
         Architecture architecture,

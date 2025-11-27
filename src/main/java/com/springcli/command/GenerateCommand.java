@@ -155,6 +155,9 @@ public class GenerateCommand {
         consoleService.printInfo("  Java:");
         String javaVersion = uiSelector.selectJavaVersion(metadata, preset.javaVersion());
 
+        consoleService.printInfo("  Language:");
+        String language = uiSelector.selectLanguage(metadata, metadata.defaultLanguage());
+
         consoleService.printInfo("  Packaging:");
         String packaging = uiSelector.selectPackaging(metadata);
 
@@ -175,6 +178,7 @@ public class GenerateCommand {
                 description,
                 packageName,
                 javaVersion,
+                language,
                 buildTool,
                 packaging,
                 architecture,
@@ -529,6 +533,9 @@ public class GenerateCommand {
         consoleService.printInfo("  Java:");
         String javaVersion = uiSelector.selectJavaVersion(metadata, "21");
 
+        consoleService.printInfo("  Language:");
+        String language = uiSelector.selectLanguage(metadata, metadata.defaultLanguage());
+
         consoleService.printInfo("  Packaging:");
         String packaging = uiSelector.selectPackaging(metadata);
 
@@ -549,6 +556,7 @@ public class GenerateCommand {
                 description,
                 packageName,
                 javaVersion,
+                language,
                 buildTool,
                 packaging,
                 architecture,

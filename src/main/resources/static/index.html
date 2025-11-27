@@ -223,6 +223,23 @@
                         </div>
                     </div>
 
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Language</label>
+                            <div id="languageContainer" class="flex flex-wrap gap-2">
+                                <div class="h-8 w-full bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse"></div>
+                            </div>
+                            <input type="hidden" id="language">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Packaging</label>
+                            <div id="packagingContainer" class="flex flex-wrap gap-2">
+                                <div class="h-8 w-full bg-gray-100 dark:bg-white/5 rounded-lg animate-pulse"></div>
+                            </div>
+                            <input type="hidden" id="packaging">
+                        </div>
+                    </div>
+
                     <div>
                         <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Architecture Pattern</label>
                         <div class="relative group">
@@ -502,40 +519,33 @@
     }
 
     // --- LOAD DATA ---
-    async function loadOptions() {
+   async function loadOptions() {
         try {
             const res = await fetch(`${API_BASE}/options`);
             const data = await res.json();
 
-            // 1. Process Build Tools (ALL of them, formatted nicely)
+            // --- 1. Process Build Tools (Maven/Gradle) ---
             const buildTools = data.buildTools.map(tool => {
                 let val, label;
-                // Handle if backend sends objects or strings
                 if (typeof tool === 'string') {
                     val = tool;
                     label = tool;
                 } else {
-                    val = tool.val || tool.id || tool; // Adapting to potential backend formats
+                    val = tool.val || tool.id || tool;
                     label = tool.label || tool.name || tool;
                 }
 
-                // Formatting for display
                 let displayLabel = label.toLowerCase()
                     .replace('-project', '')
                     .replace('kotlin', 'Kotlin')
                     .replace('groovy', 'Groovy');
 
-                // Capitalize first letter
                 displayLabel = displayLabel.charAt(0).toUpperCase() + displayLabel.slice(1);
 
-                // Add parenthesis for variants
-                if(displayLabel.includes('gradle') && !displayLabel.includes(' ')) {
-                     // Pure gradle usually means groovy in some contexts, or just generic
-                     displayLabel = "Gradle";
-                }
+                if(displayLabel.includes('gradle') && !displayLabel.includes(' ')) displayLabel = "Gradle";
                 if(displayLabel.includes('maven')) displayLabel = "Maven";
 
-                // Manual Overrides for prettier labels if ID is standard
+                // Ajustes finos de nomes
                 if(val === 'gradle-project-kotlin') displayLabel = 'Gradle (Kotlin)';
                 if(val === 'gradle-project') displayLabel = 'Gradle (Groovy)';
                 if(val === 'maven-project') displayLabel = 'Maven';
@@ -543,28 +553,49 @@
                 return { val: val, label: displayLabel };
             });
 
-            // Remove duplicates based on value just in case
             const uniqueBuildTools = [...new Map(buildTools.map(item => [item.val, item])).values()];
-
-            // Default to Maven if available
             const defaultTool = uniqueBuildTools.find(t => t.val.includes('maven'))?.val || uniqueBuildTools[0].val;
 
             createPillSelector('buildToolContainer', 'buildTool', uniqueBuildTools, defaultTool, 'label', 'val');
 
-            // 2. Versions - Filter out SNAPSHOT, milestone (M), and release candidates (RC)
-            const stableBootVersions = data.springBootVersions.filter(v =>
+            // --- 2. Spring Boot Versions (SEM FILTRO) ---
+
+            // Aqui está a mágica: Pegamos TUDO o que veio do backend
+            const allVersions = data.springBootVersions;
+
+            // Lógica apenas para definir qual botão começa "aceso" (selecionado)
+            // Tenta achar a primeira que NÃO é snapshot/milestone. Se não achar, pega a primeira da lista mesmo.
+            const defaultBootVersion = allVersions.find(v =>
                 !v.includes('SNAPSHOT') &&
                 !v.includes('M') &&
-                !v.includes('RC') &&
-                !v.startsWith('4.')
-            );
-
-            const defaultBootVersion = stableBootVersions.length > 0 ? stableBootVersions[0] : data.springBootVersions[0];
+                !v.includes('RC')
+            ) || allVersions[0];
 
             createPillSelector('javaVersionContainer', 'javaVersion', data.javaVersions, '17');
-            createPillSelector('bootVersionContainer', 'springBootVersion', stableBootVersions, defaultBootVersion);
 
-        } catch(e) { console.error("Options Error", e); showToast('Error', 'Failed to load options.', 'error'); }
+            // Renderiza TODAS as versões na tela
+            createPillSelector('bootVersionContainer', 'springBootVersion', allVersions, defaultBootVersion);
+
+            // --- 3. Languages (TODAS as linguagens) ---
+            const allLanguages = data.languages || ['java', 'kotlin', 'groovy'];
+            const languagesFormatted = allLanguages.map(lang => ({
+                val: lang,
+                label: lang.charAt(0).toUpperCase() + lang.slice(1)
+            }));
+            createPillSelector('languageContainer', 'language', languagesFormatted, languagesFormatted[0].val, 'label', 'val');
+
+            // --- 4. Packaging Types (TODOS os tipos) ---
+            const allPackagingTypes = data.packagingTypes || ['jar', 'war'];
+            const packagingFormatted = allPackagingTypes.map(pkg => ({
+                val: pkg,
+                label: pkg.toUpperCase()
+            }));
+            createPillSelector('packagingContainer', 'packaging', packagingFormatted, packagingFormatted[0].val, 'label', 'val');
+
+        } catch(e) {
+            console.error("Options Error", e);
+            showToast('Error', 'Failed to load options.', 'error');
+        }
     }
 
     async function loadArchitectures() {
@@ -802,7 +833,9 @@
             packageName: document.getElementById('packageName').value,
             springBootVersion: document.getElementById('springBootVersion').value,
             javaVersion: document.getElementById('javaVersion').value,
+            language: document.getElementById('language').value,
             buildTool: document.getElementById('buildTool').value,
+            packaging: document.getElementById('packaging').value,
             architecture: document.getElementById('architecture').value,
             dependencies: deps,
             features: feats,
