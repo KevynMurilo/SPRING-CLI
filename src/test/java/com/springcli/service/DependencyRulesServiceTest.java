@@ -83,4 +83,97 @@ class DependencyRulesServiceTest {
         assertThat(kafka.get().infrastructure().dockerCompose().depends_on())
             .contains("zookeeper");
     }
+
+    @Test
+    void shouldReturnEmptyForNullDependencyId() {
+        Optional<DependencyRule> rule = service.getRule(null);
+        assertThat(rule).isEmpty();
+    }
+
+    @Test
+    void shouldReturnFalseForNonExistentRuleInHasRule() {
+        assertThat(service.hasRule("non-existent")).isFalse();
+        assertThat(service.hasRule("fake-dependency")).isFalse();
+    }
+
+    @Test
+    void shouldReturnEmptyListForEmptyDependencyIds() {
+        List<DependencyRule> rules = service.getRules(List.of());
+        assertThat(rules).isEmpty();
+    }
+
+    @Test
+    void shouldFilterOutNonExistentDependenciesInGetRules() {
+        List<DependencyRule> rules = service.getRules(List.of("lombok", "non-existent", "postgresql"));
+
+        assertThat(rules).hasSize(2);
+        assertThat(rules).extracting(DependencyRule::id)
+            .containsExactlyInAnyOrder("lombok", "postgresql");
+    }
+
+    @Test
+    void shouldGetAllRulesWithCorrectSize() {
+        List<DependencyRule> allRules = service.getAllRules();
+
+        assertThat(allRules).isNotEmpty();
+        assertThat(allRules.size()).isGreaterThanOrEqualTo(22);
+        assertThat(allRules).extracting(DependencyRule::id)
+            .contains("lombok", "postgresql", "security", "jwt", "swagger");
+    }
+
+    @Test
+    void shouldSortByPriorityDescending() {
+        List<DependencyRule> rules = service.getRules(List.of("postgresql", "lombok", "mapstruct", "security"));
+
+        assertThat(rules).hasSize(4);
+        assertThat(rules.get(0).priority()).isGreaterThanOrEqualTo(rules.get(1).priority());
+        assertThat(rules.get(1).priority()).isGreaterThanOrEqualTo(rules.get(2).priority());
+        assertThat(rules.get(2).priority()).isGreaterThanOrEqualTo(rules.get(3).priority());
+    }
+
+    @Test
+    void shouldHaveValidBuildConfigForMaven() {
+        Optional<DependencyRule> rule = service.getRule("postgresql");
+
+        assertThat(rule).isPresent();
+        assertThat(rule.get().build()).isNotNull();
+        assertThat(rule.get().build().maven()).isNotNull();
+        assertThat(rule.get().build().maven().dependencies()).isNotEmpty();
+        assertThat(rule.get().build().maven().dependencies().get(0).groupId())
+            .isEqualTo("org.postgresql");
+    }
+
+    @Test
+    void shouldHaveValidBuildConfigForGradle() {
+        Optional<DependencyRule> rule = service.getRule("postgresql");
+
+        assertThat(rule).isPresent();
+        assertThat(rule.get().build()).isNotNull();
+        assertThat(rule.get().build().gradle()).isNotNull();
+        assertThat(rule.get().build().gradle().runtimeOnly()).isNotEmpty();
+    }
+
+    @Test
+    void shouldHaveValidRuntimeConfig() {
+        Optional<DependencyRule> rule = service.getRule("postgresql");
+
+        assertThat(rule).isPresent();
+        assertThat(rule.get().runtime()).isNotNull();
+        assertThat(rule.get().runtime().properties()).isNotEmpty();
+        assertThat(rule.get().runtime().properties())
+            .anyMatch(p -> p.key().contains("datasource"));
+    }
+
+    @Test
+    void shouldHaveAllRequiredFieldsForComplexDependency() {
+        Optional<DependencyRule> rule = service.getRule("security");
+
+        assertThat(rule).isPresent();
+        assertThat(rule.get().id()).isEqualTo("security");
+        assertThat(rule.get().category()).isNotNull();
+        assertThat(rule.get().priority()).isNotNull();
+        assertThat(rule.get().build()).isNotNull();
+        assertThat(rule.get().runtime()).isNotNull();
+        assertThat(rule.get().scaffolding()).isNotNull();
+    }
 }
