@@ -37,7 +37,6 @@ public class MainMenuCommand {
 
             List<SelectorItem<String>> menuItems = List.of(
                     SelectorItem.of("🚀 Generate New Project - Create a complete Spring Boot project", "generate"),
-                    SelectorItem.of("📦 Quick Generate       - Fast project generation (interactive)", "quick"),
                     SelectorItem.of("🌐 Open Web GUI         - Launch browser-based interface", "web-gui"),
                     SelectorItem.of("⭐ Manage Presets       - Create, edit, or delete custom presets", "manage-presets"),
                     SelectorItem.of("📋 List Presets         - View available project templates", "presets"),
@@ -65,10 +64,6 @@ public class MainMenuCommand {
                 switch (choice) {
                     case "generate":
                         generateCommand.generate();
-                        waitForKeyPress();
-                        break;
-                    case "quick":
-                        handleQuickGenerate();
                         waitForKeyPress();
                         break;
                     case "web-gui":
@@ -107,67 +102,6 @@ public class MainMenuCommand {
                 waitForKeyPress();
             }
         }
-    }
-
-    private void handleQuickGenerate() {
-        consoleService.clearScreen();
-        consoleService.printBanner();
-        consoleService.printInfo("\n╔══════════════════════════════════════════════════════════════════╗");
-        consoleService.printInfo("║                    QUICK GENERATE                                ║");
-        consoleService.printInfo("╚══════════════════════════════════════════════════════════════════╝\n");
-
-        consoleService.printSuccess("⚡ Fast project generation with minimal setup!\n");
-
-        try {
-            String artifactId = askInput("Project Name (e.g., my-api)", "my-project");
-
-            String groupId = askInput("Group ID", "com.example");
-
-            List<SelectorItem<String>> archItems = List.of(
-                    SelectorItem.of("CLEAN     - Clean Architecture (Recommended)", "CLEAN"),
-                    SelectorItem.of("HEXAGONAL - Hexagonal (Ports & Adapters)", "HEXAGONAL"),
-                    SelectorItem.of("MVC       - Model-View-Controller", "MVC"),
-                    SelectorItem.of("LAYERED   - Layered Architecture", "LAYERED"),
-                    SelectorItem.of("DDD       - Domain-Driven Design", "DDD"),
-                    SelectorItem.of("CQRS      - Command Query Responsibility Segregation", "CQRS"),
-                    SelectorItem.of("🔙 Cancel - Return to menu", "CANCEL")
-            );
-
-            SingleItemSelector<String, SelectorItem<String>> archSelector = new SingleItemSelector<>(
-                    terminal, archItems, "Select Architecture:", null
-            );
-            archSelector.setResourceLoader(resourceLoader);
-            archSelector.setTemplateExecutor(templateExecutor);
-
-            var archContext = archSelector.run(SingleItemSelector.SingleItemSelectorContext.empty());
-            String architecture = archContext.getResultItem().map(SelectorItem::getItem).orElse("CANCEL");
-
-            if ("CANCEL".equals(architecture)) {
-                consoleService.printWarning("\n❌ Generation cancelled.");
-                return;
-            }
-
-            String outputDir = askInput("Output Directory", ".");
-
-            consoleService.printInfo("\n🚀 Generating project...\n");
-            generateCommand.newProject(artifactId, groupId, architecture, outputDir);
-
-        } catch (Exception e) {
-            consoleService.printError("Error: " + e.getMessage());
-        }
-    }
-
-    private String askInput(String prompt, String defaultValue) {
-        org.springframework.shell.component.StringInput input =
-            new org.springframework.shell.component.StringInput(terminal, prompt + " [" + defaultValue + "]:", defaultValue);
-        input.setResourceLoader(resourceLoader);
-        input.setTemplateExecutor(templateExecutor);
-
-        org.springframework.shell.component.StringInput.StringInputContext context =
-            input.run(org.springframework.shell.component.StringInput.StringInputContext.empty());
-
-        String value = context.getResultValue();
-        return (value == null || value.trim().isEmpty()) ? defaultValue : value.trim();
     }
 
     private void showUtilitiesMenu() {
@@ -240,10 +174,6 @@ public class MainMenuCommand {
         consoleService.printInfo("  m, menu              Open interactive menu (recommended)");
         consoleService.printInfo("  generate             Start project generation wizard");
         consoleService.printInfo("  preset-manager       Manage custom presets\n");
-
-        consoleService.printSuccess("⚡ QUICK COMMANDS:\n");
-        consoleService.printInfo("  new <name>           Quick project generation");
-        consoleService.printInfo("    Example: new my-api --groupId=com.company --architecture=CLEAN\n");
 
         consoleService.printSuccess("🛠️  UTILITY COMMANDS:\n");
         consoleService.printInfo("  list-presets         List all available presets");

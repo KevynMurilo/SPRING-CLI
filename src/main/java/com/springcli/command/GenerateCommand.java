@@ -8,11 +8,9 @@ import org.jline.terminal.Terminal;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.shell.component.MultiItemSelector;
 import org.springframework.shell.component.SingleItemSelector;
-import org.springframework.shell.component.StringInput;
 import org.springframework.shell.component.support.SelectorItem;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
 import org.springframework.shell.style.TemplateExecutor;
 
 import java.util.*;
@@ -27,6 +25,8 @@ public class GenerateCommand {
     private final PresetService presetService;
     private final ConfigService configService;
     private final ConsoleService consoleService;
+    private final UISelector uiSelector;
+    private final FeatureCustomizer featureCustomizer;
     private final Terminal terminal;
     private final ResourceLoader resourceLoader;
     private final TemplateExecutor templateExecutor;
@@ -76,42 +76,6 @@ public class GenerateCommand {
                 consoleService.printError("Failed to generate project: " + e.getMessage());
                 e.printStackTrace();
             }
-        }
-    }
-
-    @ShellMethod(key = "new", value = "Quick project generation with minimal prompts")
-    public void newProject(
-            @ShellOption(help = "Project artifact ID") String artifactId,
-            @ShellOption(defaultValue = "com.example", help = "Group ID") String groupId,
-            @ShellOption(defaultValue = "CLEAN", help = "Architecture") String architecture,
-            @ShellOption(defaultValue = ".", help = "Output directory") String output
-    ) {
-        try {
-            consoleService.clearScreen();
-            SpringMetadata metadata = metadataService.getMetadata();
-
-            ProjectConfig config = new ProjectConfig(
-                    groupId,
-                    artifactId,
-                    artifactId,
-                    "Spring Boot Application",
-                    groupId + "." + artifactId.replace("-", ""),
-                    "21",
-                    metadata.defaultBuildTool() != null ? metadata.defaultBuildTool() : "maven-project",
-                    "jar",
-                    Architecture.valueOf(architecture.toUpperCase()),
-                    metadata.defaultSpringBootVersion(),
-                    Set.of("web", "lombok"),
-                    ProjectFeatures.defaults(),
-                    output
-            );
-
-            consoleService.printInfo("Generating project: " + artifactId + "...\n");
-            generatorService.generateProject(config);
-            consoleService.printGenerationSuccess(output + "/" + artifactId);
-
-        } catch (Exception e) {
-            consoleService.printError("Failed to generate project: " + e.getMessage());
         }
     }
 
@@ -169,32 +133,40 @@ public class GenerateCommand {
 
         consoleService.printInfo("📋 PROJECT METADATA\n");
 
-        String groupId = askString("Group:", userConfig.defaultGroupId());
+        String groupId = uiSelector.askString("Group:", userConfig.defaultGroupId());
         String artifactId = askValidArtifactId("Artifact:", "demo", userConfig.defaultOutputDir());
 
         if (artifactId == null) {
             return null;
         }
 
-        String name = askString("Name:", artifactId);
-        String description = askString("Description:", "Demo project for Spring Boot");
-        String packageName = askString("Package name:", groupId + "." + artifactId.replace("-", ""));
+        String name = uiSelector.askString("Name:", artifactId);
+        String description = uiSelector.askString("Description:", "Demo project for Spring Boot");
+        String packageName = uiSelector.askString("Package name:", groupId + "." + artifactId.replace("-", ""));
 
         consoleService.printInfo("\n⚙️  PROJECT SETTINGS\n");
+        consoleService.printInfo("  Spring Boot:");
+        String springBootVersion = uiSelector.selectSpringBootVersion(metadata, metadata.defaultSpringBootVersion());
+        consoleService.printInfo("  Selected Spring Boot version: " + springBootVersion);
 
-        String springBootVersion = selectSpringBootVersion(metadata, metadata.defaultSpringBootVersion());
-        String buildTool = selectBuildTool(metadata);
-        String javaVersion = selectJavaVersion(metadata, preset.javaVersion());
-        String packaging = selectPackaging(metadata);
+        consoleService.printInfo("  Build Tool:");
+        String buildTool = uiSelector.selectBuildTool(metadata);
 
-        Architecture architecture = selectArchitecture(preset.architecture());
+        consoleService.printInfo("  Java:");
+        String javaVersion = uiSelector.selectJavaVersion(metadata, preset.javaVersion());
+
+        consoleService.printInfo("  Packaging:");
+        String packaging = uiSelector.selectPackaging(metadata);
+
+        consoleService.printInfo("\n📐 ARCHITECTURE\n");
+        Architecture architecture = uiSelector.selectArchitecture(preset.architecture());
 
         Set<String> dependencies = selectDependenciesByCategory(preset.dependencies(), metadata);
 
-        ProjectFeatures features = customizeFeatures(preset.features(), dependencies);
+        ProjectFeatures features = featureCustomizer.customizeFeatures(preset.features(), dependencies);
 
         consoleService.printInfo("");
-        String output = askString("📁 Output Directory:", userConfig.defaultOutputDir());
+        String output = uiSelector.askString("📁 Output Directory:", userConfig.defaultOutputDir());
 
         return new ProjectConfig(
                 groupId,
@@ -213,30 +185,13 @@ public class GenerateCommand {
         );
     }
 
-    private String askString(String prompt, String defaultValue) {
-        try {
-            StringInput input = new StringInput(terminal, "  " + prompt, defaultValue);
-            input.setResourceLoader(resourceLoader);
-            input.setTemplateExecutor(templateExecutor);
-            String result = input.run(StringInput.StringInputContext.empty()).getResultValue();
-            return result != null && !result.trim().isEmpty() ? result : defaultValue;
-        } catch (java.io.IOError e) {
-            throw new RuntimeException("User cancelled operation", e);
-        } catch (Exception e) {
-            if (e.getCause() instanceof java.io.InterruptedIOException) {
-                throw new RuntimeException("User cancelled operation", e);
-            }
-            return defaultValue;
-        }
-    }
-
     private String askValidArtifactId(String prompt, String defaultValue, String outputDir) {
         String artifactId;
         int attempts = 0;
         final int maxAttempts = 5;
 
         while (attempts < maxAttempts) {
-            artifactId = askString(prompt, defaultValue);
+            artifactId = uiSelector.askString(prompt, defaultValue);
 
             java.nio.file.Path projectPath = java.nio.file.Paths.get(outputDir).resolve(artifactId);
 
@@ -246,7 +201,7 @@ public class GenerateCommand {
 
             consoleService.printWarning("\n⚠️  Project '" + artifactId + "' already exists at: " + projectPath);
 
-            boolean useAnother = askYesNo("  Would you like to use a different name?", true);
+            boolean useAnother = uiSelector.askYesNo("  Would you like to use a different name?", true);
 
             if (!useAnother) {
                 consoleService.printError("Cannot proceed: directory already exists.");
@@ -262,153 +217,12 @@ public class GenerateCommand {
         return null;
     }
 
-    private String selectSpringBootVersion(SpringMetadata metadata, String defaultVersion) {
-        consoleService.printInfo("  Spring Boot:");
-
-        List<String> stableVersions = metadata.springBootVersions().stream()
-                .filter(v -> !v.contains("SNAPSHOT") && !v.contains("M") && !v.contains("RC"))
-                .collect(Collectors.toList());
-
-        if (stableVersions.isEmpty()) {
-            stableVersions = metadata.springBootVersions();
-        }
-
-        String stableDefault = stableVersions.isEmpty() ? defaultVersion : stableVersions.get(0);
-
-        List<SelectorItem<String>> versionItems = stableVersions.stream()
-                .map(version -> SelectorItem.of(
-                        version + (version.equals(stableDefault) ? " (recommended)" : ""),
-                        version
-                ))
-                .collect(Collectors.toList());
-
-        SingleItemSelector<String, SelectorItem<String>> selector = new SingleItemSelector<>(
-                terminal,
-                versionItems,
-                "    Select version:",
-                null
-        );
-        selector.setResourceLoader(resourceLoader);
-        selector.setTemplateExecutor(templateExecutor);
-
-        SingleItemSelector.SingleItemSelectorContext<String, SelectorItem<String>> context = selector.run(
-                SingleItemSelector.SingleItemSelectorContext.empty()
-        );
-
-        String selected = context.getResultItem().map(SelectorItem::getItem).orElse(stableDefault);
-        consoleService.printInfo("  Selected Spring Boot version: " + selected);
-        return selected;
-    }
-
-    private String selectBuildTool(SpringMetadata metadata) {
-        consoleService.printInfo("  Build Tool:");
-
-        List<SelectorItem<String>> buildToolItems = metadata.buildTools().stream()
-                .map(tool -> SelectorItem.of(
-                        tool.name() + (tool.id().equals(metadata.defaultBuildTool()) ? " (recommended)" : ""),
-                        tool.id()
-                ))
-                .collect(Collectors.toList());
-
-        SingleItemSelector<String, SelectorItem<String>> selector = new SingleItemSelector<>(
-                terminal,
-                buildToolItems,
-                "    Select:",
-                null
-        );
-        selector.setResourceLoader(resourceLoader);
-        selector.setTemplateExecutor(templateExecutor);
-
-        SingleItemSelector.SingleItemSelectorContext<String, SelectorItem<String>> context = selector.run(
-                SingleItemSelector.SingleItemSelectorContext.empty()
-        );
-
-        return context.getResultItem().map(SelectorItem::getItem).orElse(metadata.defaultBuildTool());
-    }
-
-    private String selectJavaVersion(SpringMetadata metadata, String defaultVersion) {
-        consoleService.printInfo("  Java:");
-
-        List<SelectorItem<String>> javaItems = metadata.javaVersions().stream()
-                .map(version -> SelectorItem.of(
-                        version + (version.equals(defaultVersion) ? " (recommended)" : ""),
-                        version
-                ))
-                .collect(Collectors.toList());
-
-        SingleItemSelector<String, SelectorItem<String>> selector = new SingleItemSelector<>(
-                terminal,
-                javaItems,
-                "    Select version:",
-                null
-        );
-        selector.setResourceLoader(resourceLoader);
-        selector.setTemplateExecutor(templateExecutor);
-
-        SingleItemSelector.SingleItemSelectorContext<String, SelectorItem<String>> context = selector.run(
-                SingleItemSelector.SingleItemSelectorContext.empty()
-        );
-
-        return context.getResultItem().map(SelectorItem::getItem).orElse(defaultVersion);
-    }
-
-    private String selectPackaging(SpringMetadata metadata) {
-        consoleService.printInfo("  Packaging:");
-
-        List<SelectorItem<String>> packagingItems = metadata.packagingTypes().stream()
-                .map(type -> SelectorItem.of(type.toUpperCase(), type))
-                .collect(Collectors.toList());
-
-        SingleItemSelector<String, SelectorItem<String>> selector = new SingleItemSelector<>(
-                terminal,
-                packagingItems,
-                "    Select type:",
-                null
-        );
-        selector.setResourceLoader(resourceLoader);
-        selector.setTemplateExecutor(templateExecutor);
-
-        SingleItemSelector.SingleItemSelectorContext<String, SelectorItem<String>> context = selector.run(
-                SingleItemSelector.SingleItemSelectorContext.empty()
-        );
-
-        return context.getResultItem().map(SelectorItem::getItem).orElse("jar");
-    }
-
-    private Architecture selectArchitecture(Architecture defaultArch) {
-        consoleService.printInfo("\n📐 ARCHITECTURE\n");
-
-        List<SelectorItem<Architecture>> architectureItems = Arrays.stream(Architecture.values())
-                .map(arch -> {
-                    String label = String.format("%-20s %s",
-                            arch.name(),
-                            (arch == defaultArch ? "(recommended)" : ""));
-                    return SelectorItem.of(label, arch);
-                })
-                .collect(Collectors.toList());
-
-        SingleItemSelector<Architecture, SelectorItem<Architecture>> selector = new SingleItemSelector<>(
-                terminal,
-                architectureItems,
-                "  Select pattern:",
-                null
-        );
-        selector.setResourceLoader(resourceLoader);
-        selector.setTemplateExecutor(templateExecutor);
-
-        SingleItemSelector.SingleItemSelectorContext<Architecture, SelectorItem<Architecture>> context = selector.run(
-                SingleItemSelector.SingleItemSelectorContext.empty()
-        );
-
-        return context.getResultItem().map(SelectorItem::getItem).orElse(defaultArch);
-    }
-
     private Set<String> selectDependenciesByCategory(Set<String> presetDeps, SpringMetadata metadata) {
         Set<String> selectedDeps = new HashSet<>(presetDeps);
 
         printDependenciesTree(selectedDeps, metadata);
 
-        boolean customize = askYesNo("  Do you want to manage dependencies?", presetDeps.isEmpty());
+        boolean customize = uiSelector.askYesNo("  Do you want to manage dependencies?", presetDeps.isEmpty());
         if (!customize) {
             return selectedDeps;
         }
@@ -686,54 +500,6 @@ public class GenerateCommand {
         });
     }
 
-    private ProjectFeatures customizeFeatures(ProjectFeatures presetFeatures, Set<String> dependencies) {
-        consoleService.printInfo("\n🎯 FEATURES & GENERATION OPTIONS\n");
-
-        boolean hasSecurity = dependencies.contains("security");
-
-        boolean enableJwt = false;
-        if (hasSecurity) {
-            enableJwt = askYesNo("  JWT Authentication", presetFeatures.enableJwt());
-        }
-
-        boolean enableSwagger = askYesNo("  Swagger/OpenAPI", presetFeatures.enableSwagger());
-        boolean enableCors = askYesNo("  CORS Configuration", presetFeatures.enableCors());
-        boolean enableExceptionHandler = askYesNo("  Global Exception Handler", presetFeatures.enableExceptionHandler());
-
-        consoleService.printInfo("\n  DevOps & Infrastructure:");
-        boolean enableDocker = askYesNo("    Docker files", presetFeatures.enableDocker());
-        boolean enableKubernetes = askYesNo("    Kubernetes manifests", presetFeatures.enableKubernetes());
-        boolean enableCiCd = askYesNo("    CI/CD pipeline (GitHub Actions)", presetFeatures.enableCiCd());
-
-        return new ProjectFeatures(
-                enableJwt,
-                enableSwagger,
-                enableCors,
-                enableExceptionHandler,
-                presetFeatures.enableMapStruct(),
-                enableDocker,
-                enableKubernetes,
-                enableCiCd,
-                presetFeatures.enableAudit()
-        );
-    }
-
-    private boolean askYesNo(String question, boolean defaultValue) {
-        String defaultText = defaultValue ? "Y/n" : "y/N";
-        String prompt = String.format("%-40s (%s):", question, defaultText);
-        StringInput input = new StringInput(terminal, prompt, "");
-        input.setResourceLoader(resourceLoader);
-        input.setTemplateExecutor(templateExecutor);
-
-        String answer = input.run(StringInput.StringInputContext.empty()).getResultValue();
-
-        if (answer == null || answer.trim().isEmpty()) {
-            return defaultValue;
-        }
-
-        return answer.trim().equalsIgnoreCase("y") || answer.trim().equalsIgnoreCase("yes");
-    }
-
     private ProjectConfig buildConfigFromScratch(SpringMetadata metadata, UserConfig userConfig) {
         consoleService.printInfo("\n╔════════════════════════════════════════════════════════════════╗");
         consoleService.printInfo("║                CUSTOM PROJECT CONFIGURATION                    ║");
@@ -747,26 +513,34 @@ public class GenerateCommand {
             return null;
         }
 
-        String groupId = askString("Group:", userConfig.defaultGroupId());
-        String name = askString("Name:", artifactId);
-        String description = askString("Description:", "Demo project for Spring Boot");
-        String packageName = askString("Package name:", groupId + "." + artifactId.replace("-", ""));
+        String groupId = uiSelector.askString("Group:", userConfig.defaultGroupId());
+        String name = uiSelector.askString("Name:", artifactId);
+        String description = uiSelector.askString("Description:", "Demo project for Spring Boot");
+        String packageName = uiSelector.askString("Package name:", groupId + "." + artifactId.replace("-", ""));
 
         consoleService.printInfo("\n⚙️  PROJECT SETTINGS\n");
+        consoleService.printInfo("  Spring Boot:");
+        String springBootVersion = uiSelector.selectSpringBootVersion(metadata, metadata.defaultSpringBootVersion());
+        consoleService.printInfo("  Selected Spring Boot version: " + springBootVersion);
 
-        String springBootVersion = selectSpringBootVersion(metadata, metadata.defaultSpringBootVersion());
-        String buildTool = selectBuildTool(metadata);
-        String javaVersion = selectJavaVersion(metadata, "21");
-        String packaging = selectPackaging(metadata);
+        consoleService.printInfo("  Build Tool:");
+        String buildTool = uiSelector.selectBuildTool(metadata);
 
-        Architecture architecture = selectArchitecture(Architecture.CLEAN);
+        consoleService.printInfo("  Java:");
+        String javaVersion = uiSelector.selectJavaVersion(metadata, "21");
+
+        consoleService.printInfo("  Packaging:");
+        String packaging = uiSelector.selectPackaging(metadata);
+
+        consoleService.printInfo("\n📐 ARCHITECTURE\n");
+        Architecture architecture = uiSelector.selectArchitecture(Architecture.CLEAN);
 
         Set<String> dependencies = selectDependenciesByCategory(new HashSet<>(), metadata);
 
-        ProjectFeatures features = customizeFeatures(ProjectFeatures.defaults(), dependencies);
+        ProjectFeatures features = featureCustomizer.customizeFeatures(ProjectFeatures.defaults(), dependencies);
 
         consoleService.printInfo("");
-        String output = askString("📁 Output Directory:", userConfig.defaultOutputDir());
+        String output = uiSelector.askString("📁 Output Directory:", userConfig.defaultOutputDir());
 
         return new ProjectConfig(
                 groupId,
