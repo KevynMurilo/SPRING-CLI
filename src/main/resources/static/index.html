@@ -114,6 +114,31 @@
 
             <div class="glass rounded-3xl p-6 shadow-xl shadow-gray-200/50 dark:shadow-black/30">
                 <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-white/5">
+                    <div class="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h2 class="font-bold text-base uppercase tracking-wide text-gray-900 dark:text-white">Preset</h2>
+                </div>
+
+                <div class="space-y-3">
+                    <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 block">Choose a preset or start from scratch</label>
+                    <div class="relative group">
+                        <i class="fas fa-magic absolute left-3.5 top-3.5 text-gray-400 text-xs z-10"></i>
+                        <select id="presetSelect" class="appearance-none w-full bg-gray-50 dark:bg-[#15151e] border border-gray-200 dark:border-white/10 rounded-xl pl-9 pr-10 py-3 text-sm focus:ring-2 focus:ring-spring-500 outline-none cursor-pointer transition-all text-gray-700 dark:text-gray-200 font-medium hover:border-spring-400" onchange="applyPreset()">
+                            <option value="">Loading presets...</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                            <i class="fas fa-chevron-down text-xs group-hover:text-spring-500 transition-colors"></i>
+                        </div>
+                    </div>
+                    <div id="presetDescription" class="hidden mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/30 rounded-xl">
+                        <p class="text-xs text-blue-700 dark:text-blue-300 leading-relaxed"></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass rounded-3xl p-6 shadow-xl shadow-gray-200/50 dark:shadow-black/30">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100 dark:border-white/5">
                     <div class="w-8 h-8 rounded-full bg-spring-100 dark:bg-spring-900/30 text-spring-600 flex items-center justify-center">
                         <i class="fas fa-sliders-h"></i>
                     </div>
@@ -152,7 +177,15 @@
                         </div>
                         <input type="text" id="packageName" value="com.example.demo" readonly class="w-full bg-gray-100 dark:bg-black/30 border border-gray-200 dark:border-white/5 rounded-xl px-3 py-2 text-xs font-mono text-gray-500 cursor-not-allowed select-all">
                     </div>
-                    <input type="hidden" id="outputPath" value="project.zip">
+
+                    <div class="pt-2">
+                        <label class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5 block">Output Directory</label>
+                        <div class="relative">
+                            <input type="text" id="outputPath" value="." class="w-full pl-9 bg-gray-50 dark:bg-[#15151e] border border-gray-200 dark:border-white/10 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-spring-500 focus:border-transparent outline-none transition-all font-mono text-gray-700 dark:text-gray-300">
+                            <i class="fas fa-folder-open absolute left-3.5 top-3 text-gray-400 text-xs"></i>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-1.5">Path where the project will be generated</p>
+                    </div>
                 </div>
             </div>
 
@@ -381,7 +414,91 @@
                 document.getElementById('dependencySearch').focus();
             }
         });
-        await Promise.all([loadOptions(), loadArchitectures(), loadFeatures(), loadMetadata()]);
+        await Promise.all([loadPresets(), loadOptions(), loadArchitectures(), loadFeatures(), loadMetadata()]);
+    }
+
+    // --- PRESET MANAGEMENT ---
+    let presetsData = [];
+
+    async function loadPresets() {
+        try {
+            const res = await fetch(`${API_BASE}/presets`);
+            presetsData = await res.json();
+
+            const select = document.getElementById('presetSelect');
+            select.innerHTML = '';
+
+            // Add "Start from scratch" option
+            const scratchOpt = document.createElement('option');
+            scratchOpt.value = 'scratch';
+            scratchOpt.textContent = '✨ Start from scratch';
+            select.appendChild(scratchOpt);
+
+            // Add separator
+            const separator = document.createElement('option');
+            separator.disabled = true;
+            separator.textContent = '─────────────────────';
+            select.appendChild(separator);
+
+            // Add presets
+            presetsData.forEach(preset => {
+                const opt = document.createElement('option');
+                opt.value = preset.name;
+                opt.textContent = `${preset.builtIn ? '🌟' : '⭐'} ${preset.name}`;
+                select.appendChild(opt);
+            });
+
+        } catch(e) {
+            console.error("Presets Error", e);
+            showToast('Error', 'Failed to load presets.', 'error');
+        }
+    }
+
+    function applyPreset() {
+        const selectedValue = document.getElementById('presetSelect').value;
+        const descDiv = document.getElementById('presetDescription');
+        const descText = descDiv.querySelector('p');
+
+        if (!selectedValue || selectedValue === 'scratch') {
+            descDiv.classList.add('hidden');
+            return;
+        }
+
+        const preset = presetsData.find(p => p.name === selectedValue);
+        if (!preset) return;
+
+        // Show description
+        descText.textContent = preset.description;
+        descDiv.classList.remove('hidden');
+
+        // Apply preset values
+        document.getElementById('architecture').value = preset.architecture;
+        document.getElementById('javaVersion').value = preset.javaVersion;
+
+        // Update version pills if they exist
+        if (document.getElementById('javaVersionContainer').children.length > 0) {
+            createPillSelector('javaVersionContainer', 'javaVersion',
+                Array.from(document.getElementById('javaVersionContainer').children).map(btn => btn.textContent),
+                preset.javaVersion);
+        }
+
+        // Clear and set dependencies
+        document.querySelectorAll('#dependenciesArea input[type="checkbox"]').forEach(cb => {
+            cb.checked = preset.dependencies.includes(cb.value);
+            updateDepCount(cb);
+        });
+
+        // Set features
+        Object.entries(preset.features).forEach(([key, value]) => {
+            const featureCheckbox = document.getElementById(key);
+            if (featureCheckbox) {
+                featureCheckbox.checked = value;
+            }
+        });
+
+        updateConditionalFeatures();
+
+        showToast('Preset Applied', `"${preset.name}" preset has been applied successfully!`, 'success');
     }
 
     // --- LOAD DATA ---
@@ -434,10 +551,18 @@
 
             createPillSelector('buildToolContainer', 'buildTool', uniqueBuildTools, defaultTool, 'label', 'val');
 
-            // 2. Versions
-            const validBootVersions = data.springBootVersions.filter(v => !v.startsWith('4.'));
+            // 2. Versions - Filter out SNAPSHOT, milestone (M), and release candidates (RC)
+            const stableBootVersions = data.springBootVersions.filter(v =>
+                !v.includes('SNAPSHOT') &&
+                !v.includes('M') &&
+                !v.includes('RC') &&
+                !v.startsWith('4.')
+            );
+
+            const defaultBootVersion = stableBootVersions.length > 0 ? stableBootVersions[0] : data.springBootVersions[0];
+
             createPillSelector('javaVersionContainer', 'javaVersion', data.javaVersions, '17');
-            createPillSelector('bootVersionContainer', 'springBootVersion', validBootVersions, validBootVersions[0]);
+            createPillSelector('bootVersionContainer', 'springBootVersion', stableBootVersions, defaultBootVersion);
 
         } catch(e) { console.error("Options Error", e); showToast('Error', 'Failed to load options.', 'error'); }
     }
@@ -681,7 +806,7 @@
             architecture: document.getElementById('architecture').value,
             dependencies: deps,
             features: feats,
-            outputPath: 'project.zip'
+            outputPath: document.getElementById('outputPath').value || '.'
         };
 
         try {
