@@ -56,12 +56,15 @@ public class SpringInitializrClient {
             log.info("Downloading project from Spring Initializr...");
 
             Map<String, String> params = buildQueryParams(config);
+            log.info("Request parameters: {}", params);
 
             webClient.get()
                     .uri(uriBuilder -> {
                         uriBuilder.path(STARTER_ENDPOINT);
                         params.forEach(uriBuilder::queryParam);
-                        return uriBuilder.build();
+                        var uri = uriBuilder.build();
+                        log.info("Request URI: {}", uri);
+                        return uri;
                     })
                     .retrieve()
                     .bodyToFlux(DataBuffer.class)

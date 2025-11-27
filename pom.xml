@@ -43,6 +43,11 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 
@@ -147,10 +152,12 @@
 						<buildArg>-H:+ReportExceptionStackTraces</buildArg>
 						<buildArg>-H:+AddAllCharsets</buildArg>
 						<buildArg>-H:IncludeResources=templates/.*</buildArg>
+						<buildArg>-H:IncludeResources=static/.*</buildArg>
 						<buildArg>-H:IncludeResources=.*\.properties</buildArg>
 						<buildArg>-H:IncludeResources=.*\.yml</buildArg>
 						<buildArg>-H:IncludeResources=.*\.peb</buildArg>
 						<buildArg>-H:IncludeResources=.*\.template</buildArg>
+						<buildArg>-H:IncludeResources=.*\.html</buildArg>
 					</buildArgs>
 				</configuration>
 				<executions>

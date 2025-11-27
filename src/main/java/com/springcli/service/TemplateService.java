@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.Method;
+import java.lang.reflect.RecordComponent;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -32,7 +34,7 @@ public class TemplateService {
 
     public String renderTemplate(String templatePath, TemplateContext context) {
         try {
-            Map<String, Object> templateContext = buildTemplateContext(context);
+            Map<String, Object> templateContext = buildDynamicContext(context);
             if (templatePath.startsWith("/")) {
                 templatePath = templatePath.substring(1);
             }
@@ -61,35 +63,64 @@ public class TemplateService {
         return renderTemplate("ops/" + templateName, context);
     }
 
-    private Map<String, Object> buildTemplateContext(TemplateContext context) {
+    private Map<String, Object> buildDynamicContext(TemplateContext context) {
         Map<String, Object> map = new HashMap<>();
 
-        map.put("packageName", context.packageName());
-        map.put("basePackage", context.basePackage());
-        map.put("projectName", context.projectName());
-        map.put("entityName", context.entityName());
-        map.put("architecture", context.architecture() != null ? context.architecture().name() : "");
-        map.put("javaVersion", context.javaVersion());
-        map.put("buildTool", context.buildTool());
+        if (context == null) {
+            return map;
+        }
 
-        if (context.features() != null) {
-            map.put("enableJwt", context.features().enableJwt());
-            map.put("enableSwagger", context.features().enableSwagger());
-            map.put("enableCors", context.features().enableCors());
-            map.put("enableExceptionHandler", context.features().enableExceptionHandler());
-            map.put("enableMapStruct", context.features().enableMapStruct());
-            map.put("enableDocker", context.features().enableDocker());
-            map.put("enableKubernetes", context.features().enableKubernetes());
-            map.put("enableCiCd", context.features().enableCiCd());
-            map.put("enableAudit", context.features().enableAudit());
-            map.put("features", context.features());
+        Class<?> contextClass = context.getClass();
+
+        if (contextClass.isRecord()) {
+            for (RecordComponent component : contextClass.getRecordComponents()) {
+                try {
+                    Method accessor = component.getAccessor();
+                    Object value = accessor.invoke(context);
+                    String name = component.getName();
+
+                    if (value != null) {
+                        map.put(name, value);
+
+                        if (value.getClass().isRecord()) {
+                            map.putAll(flattenRecord(value, name));
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Failed to extract property '{}' from context", component.getName(), e);
+                }
+            }
         }
 
         if (context.additionalProperties() != null) {
             map.putAll(context.additionalProperties());
-            map.put("additionalProperties", context.additionalProperties());
         }
 
         return map;
+    }
+
+    private Map<String, Object> flattenRecord(Object record, String prefix) {
+        Map<String, Object> flattened = new HashMap<>();
+
+        Class<?> recordClass = record.getClass();
+        if (!recordClass.isRecord()) {
+            return flattened;
+        }
+
+        for (RecordComponent component : recordClass.getRecordComponents()) {
+            try {
+                Method accessor = component.getAccessor();
+                Object value = accessor.invoke(record);
+                String key = component.getName();
+
+                if (value != null) {
+                    flattened.put(key, value);
+                }
+            } catch (Exception e) {
+                log.warn("Failed to flatten record property '{}'", component.getName(), e);
+            }
+        }
+
+        return flattened;
     }
 }

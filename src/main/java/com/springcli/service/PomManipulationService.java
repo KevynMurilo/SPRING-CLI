@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -30,6 +32,7 @@ public class PomManipulationService {
         enhanced = ensureSpringBootBom(enhanced, config.springBootVersion());
         enhanced = injectFeatureDependencies(enhanced, features, versions);
         enhanced = ensurePluginsSection(enhanced);
+        enhanced = configureAnnotationProcessors(enhanced, config, versions);
         enhanced = injectPlugins(enhanced, config);
         enhanced = cleanupWhitespace(enhanced);
 
@@ -217,6 +220,158 @@ public class PomManipulationService {
         return pomContent;
     }
 
+    private String configureAnnotationProcessors(String pomContent, ProjectConfig config, LibraryVersions versions) {
+        List<AnnotationProcessor> processors = determineAnnotationProcessors(pomContent, config, versions);
+
+        if (processors.isEmpty()) {
+            return pomContent;
+        }
+
+        log.info("Configuring {} annotation processors for Maven Compiler Plugin", processors.size());
+
+        if (!pomContent.contains("maven-compiler-plugin")) {
+            String compilerPlugin = buildCompilerPluginWithProcessors(config.javaVersion(), processors);
+            int pluginsEnd = pomContent.indexOf("</plugins>");
+            if (pluginsEnd != -1) {
+                return pomContent.substring(0, pluginsEnd) + compilerPlugin + pomContent.substring(pluginsEnd);
+            }
+        } else {
+            return updateExistingCompilerPlugin(pomContent, processors);
+        }
+
+        return pomContent;
+    }
+
+    private List<AnnotationProcessor> determineAnnotationProcessors(String pomContent, ProjectConfig config, LibraryVersions versions) {
+        List<AnnotationProcessor> processors = new ArrayList<>();
+        Set<String> dependencies = config.dependencies();
+        ProjectFeatures features = config.features();
+
+        boolean hasLombok = pomContent.contains("lombok");
+        boolean hasMapStruct = features.enableMapStruct();
+        boolean hasQueryDsl = dependencies.stream().anyMatch(dep -> dep.contains("querydsl"));
+        boolean hasHibernateModelGen = dependencies.stream().anyMatch(dep -> dep.contains("hibernate") && dep.contains("jpamodelgen"));
+        boolean hasConfigProcessor = pomContent.contains("spring-boot-configuration-processor");
+
+        if (hasLombok && hasMapStruct) {
+            processors.add(new AnnotationProcessor("org.projectlombok", "lombok", "${lombok.version}", null));
+            processors.add(new AnnotationProcessor("org.projectlombok", "lombok-mapstruct-binding", versions.lombokMapstructBindingVersion(), null));
+            processors.add(new AnnotationProcessor("org.mapstruct", "mapstruct-processor", versions.mapStructVersion(), null));
+        } else if (hasLombok) {
+            processors.add(new AnnotationProcessor("org.projectlombok", "lombok", "${lombok.version}", null));
+        } else if (hasMapStruct) {
+            processors.add(new AnnotationProcessor("org.mapstruct", "mapstruct-processor", versions.mapStructVersion(), null));
+        }
+
+        if (hasQueryDsl) {
+            String queryDslVersion = resolveQueryDslVersion(versions);
+            processors.add(new AnnotationProcessor("com.querydsl", "querydsl-apt", queryDslVersion, "jakarta"));
+            processors.add(new AnnotationProcessor("jakarta.persistence", "jakarta.persistence-api", "3.1.0", null));
+        }
+
+        if (hasHibernateModelGen) {
+            processors.add(new AnnotationProcessor("org.hibernate.orm", "hibernate-jpamodelgen", null, null));
+        }
+
+        if (hasConfigProcessor && !processors.isEmpty()) {
+            processors.add(new AnnotationProcessor("org.springframework.boot", "spring-boot-configuration-processor", null, null));
+        }
+
+        return processors;
+    }
+
+    private String resolveQueryDslVersion(LibraryVersions versions) {
+        return "5.1.0";
+    }
+
+    private String buildCompilerPluginWithProcessors(String javaVersion, List<AnnotationProcessor> processors) {
+        StringBuilder plugin = new StringBuilder("""
+                            <plugin>
+                                <groupId>org.apache.maven.plugins</groupId>
+                                <artifactId>maven-compiler-plugin</artifactId>
+                                <version>3.13.0</version>
+                                <configuration>
+                                    <source>%s</source>
+                                    <target>%s</target>
+                                    <annotationProcessorPaths>
+                """.formatted(javaVersion, javaVersion));
+
+        for (AnnotationProcessor processor : processors) {
+            plugin.append(formatProcessorPath(processor));
+        }
+
+        plugin.append("""
+                                    </annotationProcessorPaths>
+                                </configuration>
+                            </plugin>
+                """);
+
+        return plugin.toString();
+    }
+
+    private String updateExistingCompilerPlugin(String pomContent, List<AnnotationProcessor> processors) {
+        int compilerPluginStart = pomContent.indexOf("<artifactId>maven-compiler-plugin</artifactId>");
+        if (compilerPluginStart == -1) {
+            return pomContent;
+        }
+
+        int pluginStart = pomContent.lastIndexOf("<plugin>", compilerPluginStart);
+        int pluginEnd = pomContent.indexOf("</plugin>", compilerPluginStart) + "</plugin>".length();
+
+        if (pluginStart == -1 || pluginEnd == -1) {
+            return pomContent;
+        }
+
+        String existingPlugin = pomContent.substring(pluginStart, pluginEnd);
+
+        if (existingPlugin.contains("<annotationProcessorPaths>")) {
+            int pathsStart = existingPlugin.indexOf("<annotationProcessorPaths>");
+            int pathsEnd = existingPlugin.indexOf("</annotationProcessorPaths>") + "</annotationProcessorPaths>".length();
+
+            StringBuilder newPaths = new StringBuilder("<annotationProcessorPaths>\n");
+            for (AnnotationProcessor processor : processors) {
+                newPaths.append(formatProcessorPath(processor));
+            }
+            newPaths.append("                        </annotationProcessorPaths>");
+
+            String updatedPlugin = existingPlugin.substring(0, pathsStart) + newPaths + existingPlugin.substring(pathsEnd);
+            return pomContent.substring(0, pluginStart) + updatedPlugin + pomContent.substring(pluginEnd);
+        } else {
+            int configEnd = existingPlugin.lastIndexOf("</configuration>");
+            if (configEnd != -1) {
+                StringBuilder paths = new StringBuilder("                        <annotationProcessorPaths>\n");
+                for (AnnotationProcessor processor : processors) {
+                    paths.append(formatProcessorPath(processor));
+                }
+                paths.append("                        </annotationProcessorPaths>\n                    ");
+
+                String updatedPlugin = existingPlugin.substring(0, configEnd) + paths + existingPlugin.substring(configEnd);
+                return pomContent.substring(0, pluginStart) + updatedPlugin + pomContent.substring(pluginEnd);
+            }
+        }
+
+        return pomContent;
+    }
+
+    private String formatProcessorPath(AnnotationProcessor processor) {
+        StringBuilder path = new StringBuilder("""
+                                        <path>
+                                            <groupId>%s</groupId>
+                                            <artifactId>%s</artifactId>
+                """.formatted(processor.groupId, processor.artifactId));
+
+        if (processor.version != null) {
+            path.append("                            <version>").append(processor.version).append("</version>\n");
+        }
+
+        if (processor.classifier != null) {
+            path.append("                            <classifier>").append(processor.classifier).append("</classifier>\n");
+        }
+
+        path.append("                        </path>\n");
+        return path.toString();
+    }
+
     private String injectPlugins(String pomContent, ProjectConfig config) {
         List<MavenPlugin> plugins = pluginConfigService.generateMavenPlugins(
                 config.springBootVersion(),
@@ -302,4 +457,6 @@ public class PomManipulationService {
                     </dependency>
                 """.formatted(mapStructVersion);
     }
+
+    private record AnnotationProcessor(String groupId, String artifactId, String version, String classifier) {}
 }

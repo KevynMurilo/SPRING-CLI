@@ -156,6 +156,7 @@ Generate a project directly from the command line:
 ```
 🚀 Generate New Project - Create a complete Spring Boot project
 📦 Quick Generate       - Fast project generation (interactive)
+🌐 Web GUI              - Launch modern web interface in browser
 ⭐ Manage Presets       - Create, edit, or delete custom presets
 📋 List Presets         - View available project templates
 ⚙️  Configure CLI        - Set default preferences (interactive)

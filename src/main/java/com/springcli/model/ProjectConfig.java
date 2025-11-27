@@ -1,7 +1,10 @@
 package com.springcli.model;
 
+import lombok.Builder;
+
 import java.util.Set;
 
+@Builder
 public record ProjectConfig(
         String groupId,
         String artifactId,

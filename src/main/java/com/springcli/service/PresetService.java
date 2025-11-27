@@ -10,8 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -34,27 +34,9 @@ public class PresetService {
     }
 
     public List<Preset> getBuiltInPresets() {
-        return List.of(
-                new Preset("REST-API", "Clean Architecture REST API", Architecture.CLEAN, "21",
-                        Set.of("web", "data-jpa", "h2", "validation", "lombok", "devtools"),
-                        new ProjectFeatures(true, true, true, true, true, false, false, false, true), true),
-
-                new Preset("GraphQL-API", "GraphQL API with Spring for GraphQL", Architecture.CLEAN, "21",
-                        Set.of("web", "graphql", "data-jpa", "h2", "validation", "lombok", "devtools"),
-                        new ProjectFeatures(true, false, true, true, true, false, false, false, true), true),
-
-                new Preset("Microservice", "Hexagonal architecture microservice", Architecture.HEXAGONAL, "21",
-                        Set.of("web", "data-jpa", "postgresql", "cloud-eureka", "cloud-config-client", "actuator", "lombok"),
-                        new ProjectFeatures(true, true, true, true, true, true, true, true, true), true),
-
-                new Preset("Monolith", "Traditional MVC monolith", Architecture.MVC, "21",
-                        Set.of("web", "thymeleaf", "data-jpa", "mysql", "security", "validation", "lombok"),
-                        new ProjectFeatures(false, false, false, true, false, true, false, false, false), true),
-
-                new Preset("Minimal", "Minimal Spring Boot app", Architecture.MVC, "21",
-                        Set.of("web", "lombok", "devtools"),
-                        ProjectFeatures.defaults(), true)
-        );
+        return Arrays.stream(ProjectPreset.values())
+                .map(ProjectPreset::toPreset)
+                .toList();
     }
 
     public List<Preset> getUserPresets() {

@@ -9,7 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -29,6 +31,7 @@ public class GradleManipulationService {
         enhanced = ensurePlugins(enhanced, config);
         enhanced = ensureSpringBootBom(enhanced, config.springBootVersion());
         enhanced = injectFeatureDependencies(enhanced, features, versions);
+        enhanced = configureAnnotationProcessors(enhanced, config, versions);
         enhanced = ensureTestConfiguration(enhanced, versions);
         enhanced = cleanupWhitespace(enhanced);
 
@@ -114,6 +117,91 @@ public class GradleManipulationService {
         return buildContent;
     }
 
+    private String configureAnnotationProcessors(String buildContent, ProjectConfig config, LibraryVersions versions) {
+        List<AnnotationProcessor> processors = determineAnnotationProcessors(buildContent, config, versions);
+
+        if (processors.isEmpty()) {
+            return buildContent;
+        }
+
+        log.info("Configuring {} annotation processors for Gradle", processors.size());
+
+        int dependenciesEnd = findDependenciesBlock(buildContent);
+        if (dependenciesEnd == -1) {
+            log.warn("Could not find dependencies block to inject annotation processors");
+            return buildContent;
+        }
+
+        StringBuilder processorsBlock = new StringBuilder();
+        for (AnnotationProcessor processor : processors) {
+            processorsBlock.append(formatAnnotationProcessor(processor));
+        }
+
+        if (!buildContent.substring(0, dependenciesEnd).contains("annotationProcessor")) {
+            return buildContent.substring(0, dependenciesEnd) + "\n" + processorsBlock + buildContent.substring(dependenciesEnd);
+        }
+
+        return buildContent;
+    }
+
+    private List<AnnotationProcessor> determineAnnotationProcessors(String buildContent, ProjectConfig config, LibraryVersions versions) {
+        List<AnnotationProcessor> processors = new ArrayList<>();
+        Set<String> dependencies = config.dependencies();
+        ProjectFeatures features = config.features();
+
+        boolean hasLombok = buildContent.contains("lombok");
+        boolean hasMapStruct = features.enableMapStruct();
+        boolean hasQueryDsl = dependencies.stream().anyMatch(dep -> dep.contains("querydsl"));
+        boolean hasHibernateModelGen = dependencies.stream().anyMatch(dep -> dep.contains("hibernate") && dep.contains("jpamodelgen"));
+        boolean hasConfigProcessor = buildContent.contains("spring-boot-configuration-processor");
+
+        if (hasLombok && hasMapStruct) {
+            processors.add(new AnnotationProcessor("org.projectlombok", "lombok", "1.18.36", null));
+            processors.add(new AnnotationProcessor("org.projectlombok", "lombok-mapstruct-binding", versions.lombokMapstructBindingVersion(), null));
+            processors.add(new AnnotationProcessor("org.mapstruct", "mapstruct-processor", versions.mapStructVersion(), null));
+        } else if (hasLombok) {
+            processors.add(new AnnotationProcessor("org.projectlombok", "lombok", "1.18.36", null));
+        } else if (hasMapStruct) {
+            processors.add(new AnnotationProcessor("org.mapstruct", "mapstruct-processor", versions.mapStructVersion(), null));
+        }
+
+        if (hasQueryDsl) {
+            String queryDslVersion = resolveQueryDslVersion(versions);
+            processors.add(new AnnotationProcessor("com.querydsl", "querydsl-apt", queryDslVersion, "jakarta"));
+            processors.add(new AnnotationProcessor("jakarta.persistence", "jakarta.persistence-api", "3.1.0", null));
+        }
+
+        if (hasHibernateModelGen) {
+            processors.add(new AnnotationProcessor("org.hibernate.orm", "hibernate-jpamodelgen", null, null));
+        }
+
+        if (hasConfigProcessor && !processors.isEmpty()) {
+            processors.add(new AnnotationProcessor("org.springframework.boot", "spring-boot-configuration-processor", null, null));
+        }
+
+        return processors;
+    }
+
+    private String resolveQueryDslVersion(LibraryVersions versions) {
+        return "5.1.0";
+    }
+
+    private String formatAnnotationProcessor(AnnotationProcessor processor) {
+        if (processor.classifier != null) {
+            return "    annotationProcessor \"%s:%s:%s:%s\"\n".formatted(
+                    processor.groupId, processor.artifactId, processor.version, processor.classifier
+            );
+        } else if (processor.version != null) {
+            return "    annotationProcessor \"%s:%s:%s\"\n".formatted(
+                    processor.groupId, processor.artifactId, processor.version
+            );
+        } else {
+            return "    annotationProcessor \"%s:%s\"\n".formatted(
+                    processor.groupId, processor.artifactId
+            );
+        }
+    }
+
     private String ensureTestConfiguration(String buildContent, LibraryVersions versions) {
         if (!buildContent.contains("test {")) {
             String testConfig = """
@@ -178,12 +266,8 @@ public class GradleManipulationService {
     private String getMapStructDependency(LibraryVersions versions) {
         return """
                     implementation "org.mapstruct:mapstruct:%s"
-                    annotationProcessor "org.mapstruct:mapstruct-processor:%s"
-                    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:%s"
-                """.formatted(
-                versions.mapStructVersion(),
-                versions.mapStructVersion(),
-                versions.lombokMapstructBindingVersion()
-        );
+                """.formatted(versions.mapStructVersion());
     }
+
+    private record AnnotationProcessor(String groupId, String artifactId, String version, String classifier) {}
 }

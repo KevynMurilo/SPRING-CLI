@@ -23,6 +23,7 @@ public class MainMenuCommand {
     private final Terminal terminal;
     private final ResourceLoader resourceLoader;
     private final TemplateExecutor templateExecutor;
+    private final com.springcli.service.WebServerService webServerService;
 
     @ShellMethod(key = {"menu", "m"}, value = "Show interactive main menu")
     public void showMainMenu() {
@@ -37,6 +38,7 @@ public class MainMenuCommand {
             List<SelectorItem<String>> menuItems = List.of(
                     SelectorItem.of("🚀 Generate New Project - Create a complete Spring Boot project", "generate"),
                     SelectorItem.of("📦 Quick Generate       - Fast project generation (interactive)", "quick"),
+                    SelectorItem.of("🌐 Open Web GUI         - Launch browser-based interface", "web-gui"),
                     SelectorItem.of("⭐ Manage Presets       - Create, edit, or delete custom presets", "manage-presets"),
                     SelectorItem.of("📋 List Presets         - View available project templates", "presets"),
                     SelectorItem.of("⚙️  Configure CLI        - Set default preferences (interactive)", "config"),
@@ -67,6 +69,10 @@ public class MainMenuCommand {
                         break;
                     case "quick":
                         handleQuickGenerate();
+                        waitForKeyPress();
+                        break;
+                    case "web-gui":
+                        handleWebGui();
                         waitForKeyPress();
                         break;
                     case "manage-presets":
@@ -288,6 +294,27 @@ public class MainMenuCommand {
         consoleService.printInfo("     • JPA Auditing\n");
         consoleService.printInfo("  📚 For help: Type 'help' or 'h'");
         consoleService.printInfo("  🌐 GitHub: https://github.com/KevynMurilo/spring-cli\n");
+    }
+
+    private void handleWebGui() {
+        consoleService.clearScreen();
+        consoleService.printBanner();
+        consoleService.printInfo("\n╔══════════════════════════════════════════════════════════════════╗");
+        consoleService.printInfo("║                    WEB GUI                                       ║");
+        consoleService.printInfo("╚══════════════════════════════════════════════════════════════════╝\n");
+
+        consoleService.printSuccess("🌐 Launching Web Interface...\n");
+        consoleService.printInfo("  The web interface will open in your default browser.\n");
+
+        try {
+            webServerService.startAndOpenBrowser();
+            if (webServerService.isRunning()) {
+                consoleService.printInfo("  If it doesn't open automatically, visit: http://localhost:" +
+                    webServerService.getServerPort() + "\n");
+            }
+        } catch (Exception e) {
+            consoleService.printError("Failed to start web server: " + e.getMessage());
+        }
     }
 
     private void waitForKeyPress() {
