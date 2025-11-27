@@ -127,25 +127,17 @@ Simply run the CLI and navigate through the menus:
 
 ### Command-Line Mode
 
-Generate a project directly from the command line:
+Generate a project using the interactive wizard:
 
 ```bash
-# Basic generation
-./spring-cli new my-api
+# Start interactive generation wizard
+./spring-cli generate
 
-# With architecture
-./spring-cli new my-api --architecture HEXAGONAL
-
-# With preset
-./spring-cli new my-api --preset rest-api
-
-# Full customization
-./spring-cli new my-api \
-  --group com.example \
-  --architecture CLEAN \
-  --java 21 \
-  --output ./projects
+# Or use menu for guided experience
+./spring-cli menu
 ```
+
+For automated workflows, you can use the presets feature to save time.
 
 ---
 
@@ -155,7 +147,6 @@ Generate a project directly from the command line:
 
 ```
 🚀 Generate New Project - Create a complete Spring Boot project
-📦 Quick Generate       - Fast project generation (interactive)
 🌐 Web GUI              - Launch modern web interface in browser
 ⭐ Manage Presets       - Create, edit, or delete custom presets
 📋 List Presets         - View available project templates
@@ -186,7 +177,8 @@ Presets allow you to save common configurations:
 ./spring-cli menu → Manage Presets → Create New Preset
 
 # Use preset in generation
-./spring-cli new my-api --preset microservice-template
+./spring-cli generate
+# Then select your preset from the menu
 ```
 
 **Built-in Presets:**
